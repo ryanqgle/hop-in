@@ -15,5 +15,5 @@ To leave the virtual environment, do `deactivate`.
 
 Then, install dependencies
 
-` pip install react flask requests `
+` pip install -r requirements.txt `
 
