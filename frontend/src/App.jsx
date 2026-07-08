@@ -8,11 +8,26 @@ function App() {
     const { data } = supabase.auth.onAuthStateChange((event, session) =>{
       if (event === 'SIGNED_IN' && session){
         const email = session.user.email
+
         if (!email.endsWith('.edu')) {
           alert('Login with a valid .edu email')
           supabase.auth.signOut()
         } else {
           localStorage.setItem('supabaseToken', session.access_token)
+          console.log("Successfully logged in")
+
+          try {
+            const res = fetch('http://127.0.0.1:5000/api/auth', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${session.access_token}`
+              }
+            })
+            const data = res.json()
+            console.log("Database response: ", data)
+          } catch (error) {
+            console.error("Error registering user: ", error)
+          }
         }
       }
     })

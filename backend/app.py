@@ -40,6 +40,28 @@ def get_authenticated_user():
 def home():
     return "Flask is successfully running"
 
+
+@app.route('/api/auth', methods=['POST'])
+def register_auth_user():
+    if request.method == 'OPTIONS':
+        return {"status": "preflight ok"}, 200
+
+    user = get_authenticated_user()
+
+    if user:
+        try:
+            supabase.table('users').upsert({
+                'id': user.id,
+                'email': user.email
+            }).execute()
+            return {"status": "success", "message": f"User {user.email} registered successfully."}
+        except Exception as e:
+            print(f"Error registering user: {e}")
+            return {"status": "error", "message": "Failed to register user."}, 500
+
+    return {"status": "error", "message": "Unauthorized."}, 401
+
+
 @app.route('/api/test', methods=['GET'])
 def test_auth():
     if request.method == 'OPTIONS':
