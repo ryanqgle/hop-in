@@ -1,12 +1,8 @@
 import { useState, useEffect } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
 import './App.css'
 import { supabase } from './dbConnection'
 
 function App() {
-  const [count, setCount] = useState(0)
 
   useEffect(() => {
     const { data } = supabase.auth.onAuthStateChange((event, session) =>{
@@ -23,9 +19,24 @@ function App() {
     return () => data.subscription.unsubscribe()
   }, [])
 
+  const loginWithGoogle = async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+    })
+  }
+
+  const logout = async () => {
+    await supabase.auth.signOut()
+    localStorage.removeItem('supabaseToken')
+    alert("Logged out successfully!")
+  }
+
   const testBackendConn = async () => {
     const token = localStorage.getItem('supabaseToken')
-    const res = await fetch('http://localhost:5000/api/test', {
+
+    console.log("Token from localStorage: ", token)
+
+    const res = await fetch('http://127.0.0.1:5000/api/test', {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`
@@ -39,6 +50,8 @@ function App() {
 
   return (
     <>
+      <button onClick={loginWithGoogle}>Login with Google</button>
+      <button onClick={logout}>Logout</button>
       <button onClick={testBackendConn}>Test Flask Connection</button>
     </>
   )
