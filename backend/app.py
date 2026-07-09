@@ -1,17 +1,7 @@
 import os
 from flask import Flask, request
 from flask_cors import CORS
-from dotenv import load_dotenv
-from supabase import create_client, Client
-
-load_dotenv()
-
-url = os.environ.get('SUPABASE_URL')
-key = os.environ.get('SUPABASE_KEY')
-
-if not url or not key:
-    print("Error:  environment variable missing.")
-supabase: Client = create_client(url, key)
+from db import supabase
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": ["http://localhost:5173", "http://127.0.0.1:5173"]}}, allow_headers=["Content-Type", "Authorization"], methods=["GET", "POST", "OPTIONS", "PUT", "DELETE"])
@@ -165,9 +155,9 @@ def user_exists():
 
 
 # Import blueprints after `supabase` is defined so trips.py can import it
-#from trips import trips_bp
+from trips import trips_bp
 
-#pp.register_blueprint(trips_bp)
+app.register_blueprint(trips_bp)
 
 
 if __name__ == '__main__':

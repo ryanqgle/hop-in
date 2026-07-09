@@ -29,6 +29,13 @@ function Header({ onNavigate, isLoggedIn, onLogout }) {
               About
             </Link>
 
+            {isLoggedIn && (
+              <Link as={RouterLink} to="/edit-profile" fontWeight="medium" _hover={{ color: 'blue.500' }}>
+                Profile
+              </Link>
+            )}
+          </HStack>
+
             {isLoggedIn ? (
             <Button 
               onClick={onLogout} 
@@ -48,7 +55,6 @@ function Header({ onNavigate, isLoggedIn, onLogout }) {
               Login
             </Button>
           )}
-        </HStack>
         </HStack>
       </Flex>
     </Box>
