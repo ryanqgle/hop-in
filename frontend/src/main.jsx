@@ -78,7 +78,7 @@ function Shell() {
           }
         />
         <Route
-          path="/edit-profile"
+          path="/profile"
           element={
             <ProtectedRoute>
               <ProfileView />
@@ -101,7 +101,8 @@ function Shell() {
             </ProtectedRoute>
           } 
         />
-          path="/create-ride"
+        <Route
+        path="/create-ride"
           element={
             <ProtectedRoute>
               <CreateRideForm />
