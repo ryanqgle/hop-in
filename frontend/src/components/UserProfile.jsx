@@ -69,7 +69,7 @@ export default function UserProfile() {
 
             if (data.status === 'success') {
                 alert('Profile updated successfully!')
-                setProfile(data.profile)
+                setProfile(prevProfile => ({...prevProfile, ...data.profile }))
                 navigate('/profile')
             }
         } catch (err) {
@@ -86,7 +86,7 @@ export default function UserProfile() {
     if (loading) {
         return (
             <Center mt={20}>
-                <Spinner size="xl" color="blue.500" />
+                <Spinner size="xl" color="blue.500"  />
             </Center>
         )
     }

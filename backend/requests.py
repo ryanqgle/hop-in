@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 
-from app import supabase, get_authenticated_user
+from db import supabase
 
 requests_bp = Blueprint('requests', __name__)
 
@@ -8,7 +8,7 @@ requests_bp = Blueprint('requests', __name__)
 def get_requests(trip_id):
     """Return join requests for a trip, newest first."""
     try:
-        result = supabase.table('TripRequests').select('*, Users(first_name, last_name)') \
+        result = supabase.table('trip_requests').select('*, users(first_name, last_name, profile_picture)') \
             .eq('trip_id', trip_id) \
             .order('requested_at', desc=True) \
             .execute()
@@ -18,6 +18,8 @@ def get_requests(trip_id):
 
 @requests_bp.route('/api/trips/<int:trip_id>/requests', methods=['POST'])
 def create_request(trip_id):
+    from app import get_authenticated_user
+
     user = get_authenticated_user()
     if not user:
         return jsonify({'error': 'Unauthorized'}), 401
@@ -33,7 +35,7 @@ def create_request(trip_id):
     if trip['available_seats'] < 1:
         return jsonify({'error': 'No seats left on this trip'}), 400
 
-    result = supabase.table('TripRequests').insert({
+    result = supabase.table('trip_requests').insert({
         'trip_id': trip_id,
         'passenger_id': user.id,
         'status': 'pending'
@@ -42,6 +44,8 @@ def create_request(trip_id):
 
 @requests_bp.route('/api/trips/<int:trip_id>/requests/<int:request_id>', methods=['PATCH'])
 def update_request(trip_id, request_id):
+    from app import get_authenticated_user
+    
     user = get_authenticated_user()
     if not user:
         return jsonify({'error': 'Unauthorized'}), 401
@@ -69,7 +73,7 @@ def update_request(trip_id, request_id):
                 trip_update['status'] = 'full'
             supabase.table('Trips').update(trip_update).eq('id', trip_id).execute()
 
-        result = supabase.table('TripRequests').update({'status': new_status}) \
+        result = supabase.table('trip_requests').update({'status': new_status}) \
             .eq('id', request_id).execute()
         return jsonify(result.data[0])
     except Exception as error:
