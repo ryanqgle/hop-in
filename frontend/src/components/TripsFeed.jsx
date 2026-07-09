@@ -19,10 +19,12 @@ import {
   ModalHeader,
   ModalCloseButton,
   ModalBody,
-  useDisclosure
+  useDisclosure,
+  useToast
 } from '@chakra-ui/react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth.jsx'
+import { supabase } from '../dbConnection.js'
 
 function truncate(value, max = 30) {
   if (!value) return value
@@ -48,15 +50,59 @@ function TripsFeed() {
   const [selectedDriver, setSelectedDriver] = useState(null)
   const [mapDestination, setMapDestination] = useState(null)
   const [role, setRole] = useState(null)
+  const [requesting, setRequesting] = useState(null)
   const { isOpen, onOpen, onClose } = useDisclosure()
   const map = useDisclosure()
   const { token } = useAuth()
   const navigate = useNavigate()
+  const toast = useToast()
 
   const openDriver = (driver) => {
     setSelectedDriver(driver)
     onOpen()
   }
+
+  const handleRequestJoin = async (tripId) => {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+      toast({ title: 'Please log in to request a seat.', status: 'warning', duration: 3000 })
+      setRequesting(null)
+      return
+    }
+
+    try {
+      const res = await fetch(`/api/trips/${tripId}/requests`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${session.access_token}` }
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Failed to send request.')
+      }
+
+      toast({
+        title: 'Request sent!',
+        description: "We've notified the driver of your request.",
+        status: 'success',
+        duration: 3000,
+        isClosable: true,
+      })
+    } catch (err) {
+      toast({
+        title: 'Could not send request.',
+        description: err.message || 'Could not send request.',
+        status: 'error',
+        duration: 3000,
+        isClosable: true,
+      })
+    } finally {
+      setRequesting(null)
+    }
+  }
+
+
 
   const openMap = (destination) => {
     setMapDestination(destination)
@@ -206,9 +252,17 @@ function TripsFeed() {
                     {trip.description}
                   </Text>
                 )}
-                
-                {/* TO DO: Displays request sent msg and have it send a request to the user thru backend */}
-                <Button colorScheme="blue" width="x" variant="solid" borderRadius="full" size="sm">
+
+                <Button
+                colorScheme="blue"
+                width="x"
+                variant="solid"
+                borderRadius="full"
+                size="sm"
+                onClick={() => handleRequestJoin(trip.id)}
+                isLoading={requesting === trip.id}
+                loadingText="Requesting..."
+                >
                   Request to Join
                 </Button>
 
