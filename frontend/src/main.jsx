@@ -78,7 +78,7 @@ function Shell() {
           }
         />
         <Route
-          path="/edit-profile"
+          path="/profile"
           element={
             <ProtectedRoute>
               <ProfileView />
