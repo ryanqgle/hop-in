@@ -14,8 +14,10 @@ import {
     Center,
     Heading
 } from '@chakra-ui/react'
+import { useAuth } from '../auth.jsx'
 
 export default function UserProfile() {
+    const { token } = useAuth()
     const [profile, setProfile] = useState({
         first_name: '',
         last_name: '',
@@ -27,16 +29,11 @@ export default function UserProfile() {
 
     useEffect(() => {
         const fetchProfile = async () => {
-            const { data: { session } } = await supabase.auth.getSession()
-
-            if (!session) {
-                setLoading(false)
-                return
-            }
+            if (!token) return
 
             try {
-                const res = await fetch('http://127.0.0.1:5000/api/edit-profile', {
-                  headers: { 'Authorization': `Bearer ${session.access_token}` }
+                const res = await fetch('/api/profile', {
+                  headers: { 'Authorization': `Bearer ${token}` }
                 })
                 const data = await res.json()
 
@@ -51,17 +48,14 @@ export default function UserProfile() {
         }
 
         fetchProfile()
-    }, [])
+    }, [token])
 
     const handleSave = async (e) => {
         e.preventDefault()
         setSaving(true)
 
-        const { data: { session } } = await supabase.auth.getSession()
-        if (!session) return
-
         try {
-            const res = await fetch('http://127.0.0.1:5000/api/edit-profile', {
+            const res = await fetch('/api/profile', {
              method: 'PUT',
              headers: {
                 'Authorization': `Bearer ${session.access_token}`,

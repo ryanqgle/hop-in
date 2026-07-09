@@ -125,13 +125,15 @@ function TripsFeed() {
                     {trip.description}
                   </Text>
                 )}
-
+                
+                {/* TO DO: Displays request sent msg and have it send a request to the user thru backend */}
                 <Button colorScheme="blue" width="x" variant="solid" borderRadius="full" size="sm">
                   Request to Join
                 </Button>
 
               </CardBody>
             </Card>
+
           ))}
         </VStack>
       )}

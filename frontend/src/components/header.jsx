@@ -1,4 +1,5 @@
 import '../css/header.css'
+
 import { Link as RouterLink } from 'react-router-dom'
 import {
   Box, 
@@ -25,8 +26,8 @@ function Header({ onNavigate, isLoggedIn, onLogout }) {
               Home
             </Link>
             
-            <Link as={RouterLink} to="/about" fontWeight="medium" _hover={{ color: 'blue.500' }}>
-              About
+            <Link as={RouterLink} to="/feed" fontWeight="medium" _hover={{ color: 'blue.500' }}>
+              Trips
             </Link>
 
             {isLoggedIn && (
