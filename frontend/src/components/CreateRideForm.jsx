@@ -48,12 +48,39 @@ function CreateRideForm() {
     setForm({ ...form, [e.target.name]: value })
   }
 
+  // Verify the destination points to a real place using OpenStreetMap's free
+  // Nominatim geocoder. Returns the address string
+  // on success, or null if nothing matched.
+  const verifyDestination = async (address) => {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(address)}`
+    )
+    if (!res.ok) throw new Error(`Geocoding failed: ${res.status}`)
+    const results = await res.json()
+    return results.length > 0 ? results[0].display_name : null
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
     setSubmitting(true)
 
     try {
+      let verifiedDestination
+      try {
+        verifiedDestination = await verifyDestination(form.destination)
+      } catch {
+        setError('Could not verify the address. Please try again.')
+        setSubmitting(false)
+        return
+      }
+
+      if (!verifiedDestination) {
+        setError('Please enter a valid address for the destination.')
+        setSubmitting(false)
+        return
+      }
+
       const res = await fetch('/api/trips', {
         method: 'POST',
         headers: {
@@ -62,6 +89,7 @@ function CreateRideForm() {
         },
         body: JSON.stringify({
           ...form,
+          destination: verifiedDestination,
           available_seats: Number(form.available_seats),
           cost: Number(form.cost),
         })

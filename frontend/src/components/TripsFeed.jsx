@@ -26,6 +26,11 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../auth.jsx'
 import { supabase } from '../dbConnection.js'
 
+function truncate(value, max = 30) {
+  if (!value) return value
+  return value.length > max ? `${value.slice(0, max)}...` : value
+}
+
 function formatDeparture(value) {
   if (!value) return 'Time TBD'
   const date = new Date(value)
@@ -43,9 +48,11 @@ function TripsFeed() {
   const [trips, setTrips] = useState([])
   const [status, setStatus] = useState('loading') // 'loading' | 'error' | 'ready'
   const [selectedDriver, setSelectedDriver] = useState(null)
+  const [mapDestination, setMapDestination] = useState(null)
   const [role, setRole] = useState(null)
   const [requesting, setRequesting] = useState(null)
   const { isOpen, onOpen, onClose } = useDisclosure()
+  const map = useDisclosure()
   const { token } = useAuth()
   const navigate = useNavigate()
   const toast = useToast()
@@ -96,6 +103,11 @@ function TripsFeed() {
   }
 
 
+
+  const openMap = (destination) => {
+    setMapDestination(destination)
+    map.onOpen()
+  }
 
   // Load the current user's role so we can show driver-only create button.
   useEffect(() => {
@@ -209,8 +221,18 @@ function TripsFeed() {
                   </Badge>
                 </Flex>
 
-                <Text textAlign="left" fontSize="lg" fontWeight="bold" color="blue.600" mb={2}>
-                  → To {trip.destination}
+                <Text
+                  textAlign="left"
+                  fontSize="lg"
+                  fontWeight="bold"
+                  color="blue.600"
+                  mb={2}
+                  cursor="pointer"
+                  onClick={() => openMap(trip.destination)}
+                  _hover={{ textDecoration: 'underline' }}
+                  title="View on map"
+                >
+                  → To {truncate(trip.destination)}
                 </Text>
 
                 <HStack spacing={2} color="gray.500" fontSize="sm" mb={4}>
@@ -275,6 +297,30 @@ function TripsFeed() {
                 <Text color="gray.600">{selectedDriver.school}</Text>
               )}
             </VStack>
+          </ModalBody>
+        </ModalContent>
+      </Modal>
+
+      <Modal isOpen={map.isOpen} onClose={map.onClose} isCentered size="xl">
+        <ModalOverlay />
+        <ModalContent borderRadius="xl">
+          <ModalHeader>Destination</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody pb={6}>
+            <Text mb={3} color="gray.600">{mapDestination}</Text>
+            {mapDestination && (
+              <Box borderRadius="lg" overflow="hidden">
+                <iframe
+                  title="Destination map"
+                  width="100%"
+                  height="360"
+                  style={{ border: 0 }}
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  src={`https://www.google.com/maps?q=${encodeURIComponent(mapDestination)}&output=embed`}
+                />
+              </Box>
+            )}
           </ModalBody>
         </ModalContent>
       </Modal>
