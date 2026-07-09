@@ -90,7 +90,7 @@ export default function UserProfile() {
 
     return (
     <Box p={4}>
-        <Card maxW="lg" maxW="lg" mx="auto" boxShadow="lg" borderRadius="xl">
+        <Card maxW="lg" mx="auto" boxShadow="lg" borderRadius="xl">
             <CardBody p={8}>
                 <Heading size="lg" mb={6} textAlign="center" color="gray.700">
                     Edit Profile

@@ -10,7 +10,7 @@ import {
   Link 
 } from '@chakra-ui/react'
 
-function Header({ onNavigate, isLoggedIn, onLogout }) {
+function Header({ onLogin, isLoggedIn, onLogout }) {
   return (
     <Box bg="white" px={4} boxShadow="sm" position="sticky" top={0} zIndex="sticky">
       <Flex h={16} alignItems="center" justifyContent="space-between" maxW="6xl" mx="auto">
@@ -26,12 +26,14 @@ function Header({ onNavigate, isLoggedIn, onLogout }) {
               Home
             </Link>
             
-            <Link as={RouterLink} to="/feed" fontWeight="medium" _hover={{ color: 'blue.500' }}>
-              Trips
-            </Link>
+            {isLoggedIn && (
+              <Link as={RouterLink} to="/feed" fontWeight="medium" _hover={{ color: 'blue.500' }}>
+                Trips
+              </Link>
+            )}
 
             {isLoggedIn && (
-              <Link as={RouterLink} to="/edit-profile" fontWeight="medium" _hover={{ color: 'blue.500' }}>
+              <Link as={RouterLink} to="/profile" fontWeight="medium" _hover={{ color: 'blue.500' }}>
                 Profile
               </Link>
             )}
@@ -48,7 +50,7 @@ function Header({ onNavigate, isLoggedIn, onLogout }) {
             </Button>
           ) : (
             <Button 
-              onClick={() => onNavigate('login')} 
+              onClick={onLogin}
               colorScheme="blue" 
               size="md"
               borderRadius="full"
