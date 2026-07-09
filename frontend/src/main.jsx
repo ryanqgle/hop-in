@@ -102,13 +102,13 @@ function Shell() {
           } 
         />
         <Route
-        path="/create-ride"
+          path="/create-ride"
           element={
             <ProtectedRoute>
               <CreateRideForm />
             </ProtectedRoute>
           }
-        />
+          />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <Footer />
