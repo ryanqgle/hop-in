@@ -80,7 +80,7 @@ function DriverRequests() {
 
       setRequestsByTrip((prev) => ({
         ...prev,
-        [tripId]: prev[tripId].map((r) => (r.id === updated.id ? updated : r))
+        [tripId]: prev[tripId].map((r) => (r.id === updated.id ? { ...r, status: updated.status } : r))
       }))
     } catch (err) {
       console.error('Error updating request:', err)
