@@ -8,6 +8,11 @@ CORS(app, resources={r"/*": {"origins": ["http://localhost:5173", "http://127.0.
 
 
 def get_authenticated_user():
+    """
+    Extracts token from incoming request header, verifies it
+    with Supabase, and ensures the user has a valid .edu email address
+    """
+
     auth_header = request.headers.get('Authorization')
     if not auth_header:
         return None
@@ -33,6 +38,12 @@ def home():
 
 @app.route('/api/auth', methods=['POST'])
 def register_auth_user():
+    """
+    Called when a user signs up or logs in and upserts
+    their Supabase Auth ID and email into users
+    """
+
+    # Handle CORS preflight requests from the browser
     if request.method == 'OPTIONS':
         return {"status": "preflight ok"}, 200
 
@@ -52,11 +63,18 @@ def register_auth_user():
     return {"status": "error", "message": "Unauthorized."}, 401
 
 def extract_school_from_email(email):
+    """Helper function to parse the university name from a .edu email"""
+
     school = email.split('@')[1].replace('.edu', '')
     return school.capitalize()
 
 @app.route('/api/edit-profile', methods=['GET', 'PUT'])
 def manage_profile():
+    """
+    GET: fetches the logged-in user's profile data
+    PUT: updates the user's profile details and auto-assigns their school
+    """
+
     user = get_authenticated_user()
 
     if not user:
@@ -91,6 +109,10 @@ def manage_profile():
 
 @app.route('/api/requests/driver', methods=['POST'])
 def get_driver_requests():
+    """
+    Fetches all pending requests for all trips owned by the logged-in driver
+    """
+
     user = get_authenticated_user()
 
     if not user:
@@ -115,6 +137,8 @@ def get_driver_requests():
 
 @app.route('/api/requests/<int:request_id>', methods=['PUT'])
 def update_request_status(request_id):
+    """Allows a driver to accept or reject a specific trip request."""
+    
     user = get_authenticated_user()
 
     if not user:
