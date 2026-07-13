@@ -6,7 +6,10 @@ requests_bp = Blueprint('requests', __name__)
 
 @requests_bp.route('/api/trips/<int:trip_id>/requests', methods=['GET'])
 def get_requests(trip_id):
-    """Return join requests for a trip, newest first."""
+    """
+    Fetches all pending/accepted/declined join requests for a specific trip
+    Returns newest first
+    """
     try:
         result = supabase.table('trip_requests').select('*, users(first_name, last_name, profile_picture)') \
             .eq('trip_id', trip_id) \
@@ -18,6 +21,11 @@ def get_requests(trip_id):
 
 @requests_bp.route('/api/trips/<int:trip_id>/requests', methods=['POST'])
 def create_request(trip_id):
+    """
+    Allows a rider to request a seat on a trip
+    Includes guardrails to prevent drivers from requesting their own trips
+    and to prevent requests on full cars
+    """
     from app import get_authenticated_user
 
     try:
@@ -48,6 +56,11 @@ def create_request(trip_id):
 
 @requests_bp.route('/api/trips/<int:trip_id>/requests/<int:request_id>', methods=['PATCH'])
 def update_request(trip_id, request_id):
+    """
+    Allows the driver to accept or decline a pending request
+    If accepted, it automatically subtracts 1 from the available seats
+    If seats hit 0, it automatically marks the trip as full and removes it from available trips
+    """
     from app import get_authenticated_user
 
     user = get_authenticated_user()
