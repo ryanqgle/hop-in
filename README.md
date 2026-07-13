@@ -60,6 +60,8 @@ The API runs on **http://127.0.0.1:5000**.
 
 `backend/.env`:
 
+Use the `.env.example` template to create `.env`
+
 ```
 SUPABASE_URL=your-project-url
 SUPABASE_KEY=your-service-or-anon-key
