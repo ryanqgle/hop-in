@@ -15,6 +15,8 @@ import { supabase } from './dbConnection'
 import { apiUrl } from './api'
 import ProfileView from './components/ProfileView.jsx'
 import CreateRideForm from './components/CreateRideForm.jsx'
+import Payment from './components/Payment.jsx'
+import PaymentReturn from './components/PaymentReturn.jsx'
 
 // Wraps routes that require a logged-in user. While the session is still
 // loading we render nothing so we don't redirect prematurely; once loaded, an
@@ -108,6 +110,22 @@ function Shell() {
             <ProtectedRoute>
               <CreateRideForm />
             </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/payment"
+          element={
+            // <ProtectedRoute>
+              <Payment />
+            // </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/payment-return"
+          element={
+            // <ProtectedRoute>
+              <PaymentReturn />
+            // </ProtectedRoute>
           }
         />
         <Route path="*" element={<Navigate to="/" replace />} />
