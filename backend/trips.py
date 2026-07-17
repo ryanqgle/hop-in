@@ -1,6 +1,6 @@
 from datetime import datetime
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify
-
+from app import get_authenticated_user
 
 from db import supabase
 
@@ -85,3 +85,23 @@ def profile():
         posted_trips=posted_trips,
         joined_requests=joined_requests
     )
+
+@trips_bp.route('/api/trips/<int:trip_id>/messages', methods=['GET'])
+def get_trip_messages(trip_id):
+    """Fetches chat history when a user opens the DM"""
+
+    user = get_authenticated_user
+    if not user:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    try:
+        result = supabase.table('trip_messages')\
+                .select('*, users(first_name, profile_picture)')\
+                .eq('trip_id', trip_id)\
+                .order('created_at', desc=False)\
+                .execute()
+
+        return jsonify(result.data), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
