@@ -14,8 +14,16 @@ import {
   Avatar,
   Badge,
   Divider,
-  SimpleGrid
+  SimpleGrid,
+  Drawer,
+  DrawerOverlay,
+  DrawerContent,
+  DrawerCloseButton,
+  DrawerHeader,
+  DrawerBody,
+  useDisclosure
 } from '@chakra-ui/react'
+import TripChat from './TripChat'
 
 // The driver's dashboard (shown at "/dashboard"). It lists the trips this driver
 // has posted and, under each one, the riders who have asked to join. The driver
@@ -28,6 +36,8 @@ function DriverRequests() {
   const [requestsByTrip, setRequestsByTrip] = useState({})
   // True while the dashboard is still loading its data.
   const [loading, setLoading] = useState(true)
+  const { isOpen, onOpen, onClose } = useDisclosure()
+  const [activeTripChat, setActiveTripChat] = useState(null)
 
   // When the dashboard opens: find this driver's trips, then load the join
   // requests for each of those trips.
@@ -128,9 +138,18 @@ function DriverRequests() {
                     <Heading size="md" color="gray.800">{trip.title}</Heading>
                     <Text color="blue.600" fontWeight="bold">→ To {trip.destination}</Text>
                   </Box>
-                  <Button size="sm" colorScheme="blue" variant="solid" borderRadius="full">
+                  <Button 
+                    size="sm"
+                    colorScheme="blue"
+                    variant="solid"
+                    borderRadius="full"
+                    onClick={() => {
+                      setActiveTripChat(trip.id)
+                      onOpen()
+                    }}
+                  >
                     Chat
-                  </Button>
+                </Button>
                 </Flex>
               </Box>
 
@@ -181,6 +200,26 @@ function DriverRequests() {
           </Card>
         ))}
       </SimpleGrid>
+
+      <Drawer placement="bottom" onClose={onClose} isOpen={isOpen} size="md">
+        <DrawerOverlay />
+        <DrawerContent borderTopRadius="2xl" h="80vh">
+          <DrawerCloseButton />
+          <DrawerHeader borderBottomWidth="1px">Trip Chat</DrawerHeader>
+          <DrawerBody p={0} display="flex" flexDir="column">
+            
+            {activeTripChat && (
+              <Box flex="1" overflow="hidden">
+                 <TripChat 
+                    tripId={activeTripChat}
+                    currUserId={trips.find(t => t.id === activeTripChat)?.driver_id}
+                 />
+              </Box>
+            )}
+
+          </DrawerBody>
+        </DrawerContent>
+      </Drawer>
     </Box>
 
   )

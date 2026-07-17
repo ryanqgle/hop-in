@@ -12,15 +12,25 @@ import {
     Avatar,
     Divider,
     Center,
-    Spinner
+    Spinner,
+    Drawer,
+    DrawerBody,
+    DrawerHeader,
+    DrawerOverlay,
+    DrawerContent,
+    DrawerCloseButton,
+    useDisclosure
 } from '@chakra-ui/react'
 import { useAuth } from '../auth.jsx'
 import { apiUrl } from '../api'
+import TripChat from './TripChat.jsx'
 
 export default function RiderActivity() {
   const { token } = useAuth()
   const [requests, setRequests] = useState([])
   const [loading, setLoading] = useState(true)
+  const { isOpen, onOpen, onClose } = useDisclosure()
+  const [activeTripChat, setActiveTripChat] = useState(null)
 
   useEffect(() => {
     if (!token) return
@@ -61,7 +71,17 @@ export default function RiderActivity() {
                 <Flex justify="space-between" align="center" mb={2}>
                   <Heading size="sm">{req.trips.title}</Heading>
                   {/* chat btn for accepted rides*/}
-                  <Button size="sm" colorScheme="blue" borderRadius="full">Chat</Button>
+                    <Button
+                        size="sm"
+                        colorScheme="blue"
+                        borderRadius="full"
+                        onClick={() => {
+                            setActiveTripChat(req.trips.id)
+                            onOpen()
+                        }}
+                        >
+                        Chat
+                    </Button>
                 </Flex>
                 <Text color="blue.600" fontWeight="bold" fontSize="sm" mb={3}>
                   → To {req.trips.destination}
@@ -99,6 +119,23 @@ export default function RiderActivity() {
           ))}
         </VStack>
       )}
+        {/* chat pop-up */}
+      <Drawer placement="bottom" onClose={onClose} isOpen={isOpen} size="md">
+        <DrawerOverlay />
+        <DrawerContent borderTopRadius="2xl" h="80vh">
+          <DrawerCloseButton />
+          <DrawerHeader borderBottomWidth="1px">Trip Chat</DrawerHeader>
+          <DrawerBody p={0} display="flex" flexDir="column">
+
+            {activeTripChat && (
+              <Box flex="1" overflow="hidden">
+                 <TripChat tripId={activeTripChat} currUserId={requests[0]?.passenger_id} />
+              </Box>
+            )}
+
+          </DrawerBody>
+        </DrawerContent>
+      </Drawer>
 
     </Box>
   )
