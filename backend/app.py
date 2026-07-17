@@ -138,7 +138,7 @@ def get_driver_requests():
 @app.route('/api/requests/<int:request_id>', methods=['PUT'])
 def update_request_status(request_id):
     """Allows a driver to accept or reject a specific trip request."""
-    
+
     user = get_authenticated_user()
 
     if not user:
@@ -218,6 +218,46 @@ def create_trip_api():
         print(f"Error creating trip: {e}")
         return {"status": "error", "message": f"Error creating trip: {e}"}, 500
 
+@app.route('/api/trips/<int:trip_id>/messages', methods=['GET'])
+def get_trip_messages(trip_id):
+    """Fetches chat history when a user opens the DM"""
+
+    user = get_authenticated_user
+    if not user:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    try:
+        result = supabase.table('trip_messages')\
+                .select('*, users(first_name, profile_picture)')\
+                .eq('trip_id', trip_id)\
+                .order('created_at', desc=False)\
+                .execute()
+
+        return jsonify(result.data), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/trips/<int:trip_id>/messages', methods=['POST'])
+def send_trip_message(trip_id):
+    """Saves new message to db"""
+
+    user = get_authenticated_user
+    text = request.json.get('text')
+
+    if not user or not text:
+        return jsonify({'error': 'Invalid request'}), 400
+
+    try:
+        result = supabase.table('trip_messages').insert({
+            'trip_id': trip_id,
+            'user_id': user.id,
+            "text": text
+        }).execute()
+
+        return jsonify(result.data[0]), 201
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 # Import blueprints after `supabase` is defined so trips.py can import it
 from trips import trips_bp
