@@ -103,6 +103,17 @@ function LocationPicker({ initialValue = null, onChange, height = 300 }) {
   const reverseDebounce = useRef(null)
   const searchDebounce = useRef(null)
 
+  // When the picker sits inside a modal, Leaflet
+  // measures the map before the container reaches its final size, leaving gray
+  // or misaligned tiles. Re-measure a few times after mount to fix the layout.
+  // Harmless when not in a modal.
+  useEffect(() => {
+    const timers = [150, 400, 800].map((ms) =>
+      setTimeout(() => mapRef.current?.invalidateSize(), ms)
+    )
+    return () => timers.forEach(clearTimeout)
+  }, [])
+
   // Turn coordinates into a readable address via Nominatim's reverse endpoint.
   // Debounced (~500ms) to respect Nominatim's ~1 req/sec policy while dragging.
   // Falls back to showing the raw coordinates if the lookup fails or is empty.
