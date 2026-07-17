@@ -13,6 +13,7 @@ import { useAuth } from '../auth.jsx'
 import { apiUrl } from '../api'
 import TripsFeed from './TripsFeed.jsx'
 import DriverRequests from './DriverRequests.jsx'
+import RiderActivity from './RiderActivity.jsx'
 
 export default function Dashboard() {
     const { token } = useAuth()
@@ -53,7 +54,7 @@ export default function Dashboard() {
                         {role === 'driver' ? (
                              <DriverRequests />
                         ) : (
-                            {/* <RiderActivity /> */}
+                            <RiderActivity />
                         )}
                     </TabPanel>
                 </TabPanels>

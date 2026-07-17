@@ -273,6 +273,23 @@ def send_trip_message(trip_id):
         print("SUPABASE INSERT ERROR:", str(e))
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/rider/activity',  methods=['GET'])
+def get_rider_activity():
+    user = get_authenticated_user()
+    if not user:
+        return jsonify({'error': 'Unauthorizec'}), 401
+
+    try:
+        result = supabase.table('trip_requests')\
+            .select('id, status, trips(*, users!driver_id(first_name, profile_picture))')\
+            .eq('user_id', user.id)\
+            .execute()
+
+        return jsonify(result.data), 200
+    except Exception as e:
+        print("RIDER ACTIVITY ERROR:", str(e))
+        return jsonify({'error': str(e)}), 500
+
 # Import blueprints after `supabase` is defined so trips.py can import it
 from trips import trips_bp
 
