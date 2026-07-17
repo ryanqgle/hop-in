@@ -15,6 +15,7 @@ import { supabase } from './dbConnection'
 import { apiUrl } from './api'
 import ProfileView from './components/ProfileView.jsx'
 import CreateRideForm from './components/CreateRideForm.jsx'
+import Dashboard from './components/Dashboard.jsx'
 
 // Wraps routes that require a logged-in user. While the session is still
 // loading we render nothing so we don't redirect prematurely; once loaded, an
@@ -74,7 +75,7 @@ function Shell() {
           path="/feed"
           element={
             <ProtectedRoute>
-              <TripsFeed />
+              <Dashboard />
             </ProtectedRoute>
           }
         />
@@ -97,9 +98,7 @@ function Shell() {
         <Route
           path="/dashboard" 
           element={
-            <ProtectedRoute>
-              {isDriver ? <DriverRequests /> : <Navigate to="/feed" replace />}
-            </ProtectedRoute>
+            <Dashboard/>
           } 
         />
         <Route
@@ -111,6 +110,7 @@ function Shell() {
           }
         />
         <Route path="*" element={<Navigate to="/" replace />} />
+
       </Routes>
       <Footer />
       {showLogin && <Login onClose={() => setShowLogin(false)} />}

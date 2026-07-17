@@ -1,7 +1,6 @@
 from datetime import datetime
 from flask import Blueprint, render_template, request, redirect, url_for, session, flash, jsonify
 
-
 from db import supabase
 from routing import optimize_pickup_order, route_geometry, RoutingError
 
@@ -165,3 +164,4 @@ def profile():
         posted_trips=posted_trips,
         joined_requests=joined_requests
     )
+
