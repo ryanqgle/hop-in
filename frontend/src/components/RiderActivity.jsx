@@ -129,8 +129,7 @@ export default function RiderActivity() {
       <Drawer placement="bottom" onClose={onClose} isOpen={isOpen} size="md">
         <DrawerOverlay />
         <DrawerContent borderTopRadius="2xl" h="80vh">
-          <DrawerCloseButton />
-          <DrawerHeader borderBottomWidth="1px">Trip Chat</DrawerHeader>
+          <DrawerCloseButton zIndex={20} bg="white" borderRadius="full"/>
           <DrawerBody p={0} display="flex" flexDir="column">
 
             {activeTripChat && (
