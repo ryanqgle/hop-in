@@ -129,9 +129,9 @@ function DriverRequests() {
         </Text>
       )}
 
-      <SimpleGrid columns={{ base: 1, md: 2, lg: 3, xl: 4 }} spacing={6} w="full">
+      <SimpleGrid columns={{ base: 1, md: 2, lg: 3}} spacing={5} w="full">
         {trips.map((trip) => (
-          <Card key={trip.id} variant="outline" boxShadow="sm" borderRadius="xl">
+          <Card key={trip.id} variant="outline" boxShadow="sm" borderRadius="xl" border="1px solid" borderColor="gray.100">
             <CardBody>
               <Box mb={4}>
                 <Flex justify="space-between" align="flex-start">

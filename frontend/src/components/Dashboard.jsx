@@ -38,8 +38,8 @@ export default function Dashboard() {
     }
 
     return (
-        <Container maxW="md" h="100vh" p={0} display="flex" flexDir="column">
-            <Tabs isFitted colorScheme="blue" display="flex" flexDir="column" flex="1">
+        <Container maxW={{base:"full", ld:"5xl"}} h="100vh" p={{base:0, md:4}} display="flex" flexDir="column">
+            <Tabs isFitted={{base: true, md: false}} colorScheme="blue" display="flex" flexDir="column" flex="1">
                 <TabList>
                     <Tab fontWeight="bold">Available Trips</Tab>
                     <Tab fontWeight="bold">Activity</Tab>
