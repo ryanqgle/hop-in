@@ -17,7 +17,7 @@ ALLOWED_ORIGINS += [
     o.strip() for o in os.environ.get("FRONTEND_ORIGINS", "").split(",") if o.strip()
 ]
 
-CORS(app, resources={r"/*": {"origins": ALLOWED_ORIGINS}}, allow_headers=["Content-Type", "Authorization"], methods=["GET", "POST", "OPTIONS", "PUT", "DELETE"])
+CORS(app, resources={r"/*": {"origins": ALLOWED_ORIGINS}}, allow_headers=["Content-Type", "Authorization"], methods=["GET", "POST", "OPTIONS", "PUT", "DELETE", "PATCH"])
 
 
 def get_authenticated_user():
