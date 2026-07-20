@@ -63,9 +63,10 @@ function DriverRequests() {
         const myId = profileData.profile.id
 
         // Load all open trips, then keep only the ones this driver posted.
-        const tripsRes = await fetch(apiUrl('/api/trips'))
-        const allTrips = await tripsRes.json()
-        const myTrips = allTrips.filter((trip) => trip.driver_id === myId)
+        const tripsRes = await fetch(apiUrl('/api/driver/trips'), {
+          headers: { 'Authorization': `Bearer ${session.access_token}`}
+        })
+        const myTrips = await tripsRes.json()
         setTrips(myTrips)
 
         // For each of our trips, load its join requests and store them by trip id.

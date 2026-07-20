@@ -165,3 +165,28 @@ def profile():
         joined_requests=joined_requests
     )
 
+@trips_bp.route('/api/driver/trips', methods=['GET'])
+def get_driver_trips():
+    """
+    Returns all trips owned by the logged-in driver, including full trips.
+    Used by Driver Dashboard
+    """
+    from app import get_authenticated_user
+
+    user = get_authenticated_user()
+    if not user:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    try:
+        result = (
+            supabase
+            .table('trips')
+            .select('*')
+            .eq('driver_id', user.id)
+            .execute()
+        )
+
+        return jsonify(result.data), 200
+
+    except Exception as error:
+        return jsonify({'error': str(error)}), 500
