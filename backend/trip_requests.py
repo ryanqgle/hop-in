@@ -138,3 +138,59 @@ def update_request(trip_id, request_id):
     
     except Exception as error:
         return jsonify({'error': str(error)}), 500
+
+@requests_bp.route('/api/trips/<int:trip_id>/requests/<int:request_id>/pickup-status', methods=['PATCH'])
+def update_pickup_status(trip_id, request_id):
+    """
+    Allows the driver to confirm whether an accepted passenger showed up.
+    """
+    from app import get_authenticated_user
+
+    user = get_authenticated_user()
+    if not user:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    new_status = request.json.get('status')
+
+    if new_status not in ('picked_up', 'no_show'):
+        return jsonify({'error': "status must be 'picked_up' or 'no_show'"}), 400
+
+    try:
+        trip_result = supabase.table('trips').select('*').eq('id', trip_id).execute()
+        if not trip_result.data:
+            return jsonify({'error': 'Trip not found'}), 404
+
+        trip = trip_result.data[0]
+
+        if trip['driver_id'] != user.id:
+            return jsonify({'error': 'Unauthorized'}), 401
+
+        request_result = (
+            supabase
+            .table('trip_requests')
+            .select('*')
+            .eq('id', request_id)
+            .eq('trip_id', trip_id)
+            .execute()
+        )
+
+        if not request_result.data:
+            return jsonify({'error': 'Trip request not found'}), 404
+
+        trip_request = request_result.data[0]
+
+        if trip_request['status'] != 'accepted':
+            return jsonify({'error': 'Passenger must be accepted before pickup status can be updated'}), 400
+
+        result = (
+            supabase
+            .table('trip_requests')
+            .update({'status': new_status})
+            .eq('id', request_id)
+            .execute()
+        )
+
+        return jsonify(result.data[0]), 200
+
+    except Exception as error:
+        return jsonify({'error': str(error)}), 500

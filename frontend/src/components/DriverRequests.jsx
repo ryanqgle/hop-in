@@ -115,6 +115,39 @@ function DriverRequests() {
     }
   }
 
+  const handlePickupStatus = async (tripId, requestId, status) => {
+    const response = await supabase.auth.getSession()
+    const session = response?.data?.session
+
+    if (!session) return
+
+    try {
+      const res = await fetch(apiUrl(`/api/trips/${tripId}/requests/${requestId}/pickup-status`), {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status }),
+      })
+
+      const updated = await res.json()
+
+      if (!res.ok) {
+        throw new Error(updated.error || 'Failed to update pickup status')
+      }
+
+      setRequestsByTrip((prev) => ({
+        ...prev,
+        [tripId]: prev[tripId].map((r) =>
+          r.id === updated.id ? { ...r, status: updated.status } : r
+        ),
+      }))
+    } catch (error) {
+      console.error('Error updating pickup status:', error)
+    }
+  }
+
   if (loading) return <p>Loading requests...</p>
 
   return (
@@ -200,6 +233,17 @@ function DriverRequests() {
                         </Button>
                         <Button size="sm" colorScheme="red" variant="outline" onClick={() => handleDecision(trip.id, request.id, 'declined')}>
                           Decline
+                        </Button>
+                      </HStack>
+                    )}
+
+                    {request.status === 'accepted' && (
+                      <HStack>
+                        <Button size="sm" colorScheme="green" onClick={() => handlePickupStatus(trip.id, request.id, 'picked_up')}>
+                          Passenger is here
+                        </Button>
+                        <Button size="sm" colorScheme="red" variant="outline" onClick={() => handlePickupStatus(trip.id, request.id, 'no_show')}>
+                          No-show
                         </Button>
                       </HStack>
                     )}

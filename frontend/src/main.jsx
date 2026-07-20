@@ -102,7 +102,9 @@ function Shell() {
         <Route
           path="/dashboard" 
           element={
-            <Dashboard/>
+            <ProtectedRoute>
+              {isDriver ? <DriverRequests /> : <Dashboard />}
+            </ProtectedRoute>
           } 
         />
         <Route
