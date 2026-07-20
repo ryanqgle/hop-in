@@ -12,7 +12,7 @@ stripe_secret_key = os.getenv('STRIPE_SECRET_KEY')
 client = stripe.StripeClient(stripe_secret_key)
 webhook_secret = os.getenv('STRIPE_WEBHOOK_SECRET_KEY')
 
-DOMAIN = 'http://localhost:5173'
+DOMAIN = os.getenv('FRONTEND_URL', 'http://localhost:5173')
 
 
 
