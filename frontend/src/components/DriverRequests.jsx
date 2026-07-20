@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../dbConnection'
 import { apiUrl } from '../api'
+import RouteModalButton from './RouteModalButton.jsx'
 import {
   Box,
   Button,
@@ -14,8 +15,16 @@ import {
   Avatar,
   Badge,
   Divider,
-  SimpleGrid
+  SimpleGrid,
+  Drawer,
+  DrawerOverlay,
+  DrawerContent,
+  DrawerCloseButton,
+  DrawerHeader,
+  DrawerBody,
+  useDisclosure
 } from '@chakra-ui/react'
+import TripChat from './TripChat'
 
 // The driver's dashboard (shown at "/dashboard"). It lists the trips this driver
 // has posted and, under each one, the riders who have asked to join. The driver
@@ -28,6 +37,8 @@ function DriverRequests() {
   const [requestsByTrip, setRequestsByTrip] = useState({})
   // True while the dashboard is still loading its data.
   const [loading, setLoading] = useState(true)
+  const { isOpen, onOpen, onClose } = useDisclosure()
+  const [activeTripChat, setActiveTripChat] = useState(null)
 
   // When the dashboard opens: find this driver's trips, then load the join
   // requests for each of those trips.
@@ -118,13 +129,40 @@ function DriverRequests() {
         </Text>
       )}
 
-      <SimpleGrid columns={{ base: 1, md: 2, lg: 3, xl: 4 }} spacing={6} w="full">
+      <SimpleGrid columns={{ base: 1, md: 2, lg: 3}} spacing={5} w="full">
         {trips.map((trip) => (
-          <Card key={trip.id} variant="outline" boxShadow="sm" borderRadius="xl">
+          <Card key={trip.id} variant="outline" boxShadow="sm" borderRadius="xl" border="1px solid" borderColor="gray.100">
             <CardBody>
               <Box mb={4}>
-                <Heading size="md" color="gray.800">{trip.title}</Heading>
-                <Text color="blue.600" fontWeight="bold">→ To {trip.destination}</Text>
+                <Flex justify="space-between" align="flex-start">
+                  <Box>
+                    <Heading size="md" color="gray.800">{trip.title}</Heading>
+                    <Text color="blue.600" fontWeight="bold">→ To {trip.destination}</Text>
+                  </Box>
+                  <Button 
+                    size="sm"
+                    colorScheme="blue"
+                    variant="solid"
+                    borderRadius="full"
+                    onClick={() => {
+                      setActiveTripChat(trip.id)
+                      onOpen()
+                    }}
+                  >
+                    Chat
+                </Button>
+                </Flex>
+                <RouteModalButton
+                  tripId={trip.id}
+                  mt={3}
+                  size="sm"
+                  colorScheme="blue"
+                  variant="outline"
+                  borderRadius="full"
+                >
+                  View Route
+                </RouteModalButton>
+
               </Box>
 
               <Divider mb={4} />
@@ -174,6 +212,25 @@ function DriverRequests() {
           </Card>
         ))}
       </SimpleGrid>
+
+      <Drawer placement="bottom" onClose={onClose} isOpen={isOpen} size="md">
+        <DrawerOverlay />
+        <DrawerContent borderTopRadius="2xl" h="80vh">
+          <DrawerCloseButton zIndex={20} bg="white" borderRadius="full"/>
+          <DrawerBody p={0} display="flex" flexDir="column">
+            
+            {activeTripChat && (
+              <Box flex="1" overflow="hidden">
+                 <TripChat 
+                    tripId={activeTripChat}
+                    currUserId={trips.find(t => t.id === activeTripChat)?.driver_id}
+                 />
+              </Box>
+            )}
+
+          </DrawerBody>
+        </DrawerContent>
+      </Drawer>
     </Box>
 
   )
