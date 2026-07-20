@@ -12,7 +12,7 @@ stripe_secret_key = os.getenv('STRIPE_SECRET_KEY')
 client = stripe.StripeClient(stripe_secret_key)
 webhook_secret = os.getenv('STRIPE_WEBHOOK_SECRET_KEY')
 
-DOMAIN = 'http://localhost:5173'
+DOMAIN = os.getenv('FRONTEND_URL', 'http://localhost:5173')
 
 
 
@@ -62,6 +62,33 @@ def create_checkout_session():
     amount_cents = int(float(trip['cost']) * 100)
     destination = trip.get('destination', 'Ride')
     
+    existing_payment_result = (
+        supabase
+        .table("payments")
+        .select("*")
+        .eq("trip_requests_id", trip_request_id)
+        .eq("status", "pending")
+        .order("created_at", desc=True)
+        .limit(1)
+        .execute()
+    )
+
+    if existing_payment_result.data:
+        existing_payment = existing_payment_result.data[0]
+        existing_session_id = existing_payment.get("stripe_checkout_session_id")
+
+        if existing_session_id:
+            try:
+                existing_session = client.v1.checkout.sessions.retrieve(
+                    existing_session_id
+                )
+
+                if existing_session.status == "open":
+                    return jsonify(clientSecret=existing_session.client_secret)
+
+            except Exception as e:
+                print("Failed to retrieve existing checkout session:", e)
+        
     payment_result = (
         supabase
         .table("payments")

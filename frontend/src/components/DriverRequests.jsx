@@ -73,9 +73,10 @@ function DriverRequests() {
         const myId = profileData.profile.id
 
         // Load all open trips, then keep only the ones this driver posted.
-        const tripsRes = await fetch(apiUrl('/api/trips'))
-        const allTrips = await tripsRes.json()
-        const myTrips = allTrips.filter((trip) => trip.driver_id === myId)
+        const tripsRes = await fetch(apiUrl('/api/driver/trips'), {
+          headers: { 'Authorization': `Bearer ${session.access_token}`}
+        })
+        const myTrips = await tripsRes.json()
         setTrips(myTrips)
 
         // For each of our trips, load its join requests and store them by trip id.
@@ -125,6 +126,39 @@ function DriverRequests() {
     }
   }
 
+  const handlePickupStatus = async (tripId, requestId, status) => {
+    const response = await supabase.auth.getSession()
+    const session = response?.data?.session
+
+    if (!session) return
+
+    try {
+      const res = await fetch(apiUrl(`/api/trips/${tripId}/requests/${requestId}/pickup-status`), {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ status }),
+      })
+
+      const updated = await res.json()
+
+      if (!res.ok) {
+        throw new Error(updated.error || 'Failed to update pickup status')
+      }
+
+      setRequestsByTrip((prev) => ({
+        ...prev,
+        [tripId]: prev[tripId].map((r) =>
+          r.id === updated.id ? { ...r, status: updated.status } : r
+        ),
+      }))
+    } catch (error) {
+      console.error('Error updating pickup status:', error)
+    }
+  }
+  
   const handleDeleteTrip = async (tripId) => {
     if (!window.confirm("Are you sure you want to delete this trip? This will remove all passengers.")) return;
 
@@ -232,9 +266,17 @@ function DriverRequests() {
                                                   {request.users?.first_name || 'Unknown'} {request.users?.last_name || ''}
                                               </Text>
                                           </Flex>
-                                          <Button size="xs" colorScheme="red" variant="ghost" onClick={() => handleKickRider(trip.id, request.id)}>
+                                          <HStack spacing={1}>
+                                            <Button size="xs" colorScheme="green" onClick={() => handlePickupStatus(trip.id, request.id, 'picked_up')}>
+                                              Passenger is here
+                                             </Button>
+                                            <Button size="xs" colorScheme="red" variant="outline" onClick={() => handlePickupStatus(trip.id, request.id, 'no_show')}>
+                                              No-show
+                                            </Button> 
+                                            <Button size="xs" colorScheme="red" variant="ghost" onClick={() => handleKickRider(trip.id, request.id)}>
                                               Remove
-                                          </Button>
+                                            </Button>
+                                          </HStack>
                                       </Flex>
                                   ))}
                               </VStack>

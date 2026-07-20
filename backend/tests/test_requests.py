@@ -9,7 +9,7 @@ os.environ.setdefault('SUPABASE_KEY', 'test-key')
 import pytest
 
 import app as app_module
-import requests as requests_module
+import trip_requests as requests_module
 
 
 class FakeResult:
@@ -77,8 +77,12 @@ def test_create_request_success(client, monkeypatch):
     }
     monkeypatch.setattr(requests_module, 'supabase', FakeSupabase(fake_data))
 
-    response = client.post('/api/trips/5/requests')
-
+    response = client.post('/api/trips/5/requests', json={
+        'pickup_address': 'Test pickup',
+        'pickup_lat': 35.2828,
+        'pickup_lng': -120.6596,
+    })
+    
     assert response.status_code == 201
     assert response.get_json()['status'] == 'pending'
 
@@ -101,20 +105,18 @@ def test_create_request_rejects_own_trip(client, monkeypatch):
     assert response.status_code == 400
     assert 'own trip' in response.get_json()['error']
 
-
 def test_update_request_accept_success(client, monkeypatch):
     monkeypatch.setattr(app_module, 'get_authenticated_user', lambda: FakeUser('driver-1'))
     fake_data = {
         'trips': [{'id': 5, 'driver_id': 'driver-1', 'available_seats': 2}],
-        'trip_requests': [{'id': 10, 'status': 'accepted'}],
+        'trip_requests': [{'id': 10, 'status': 'awaiting_payment'}],
     }
     monkeypatch.setattr(requests_module, 'supabase', FakeSupabase(fake_data))
 
     response = client.patch('/api/trips/5/requests/10', json={'status': 'accepted'})
 
     assert response.status_code == 200
-    assert response.get_json()['status'] == 'accepted'
-
+    assert response.get_json()['status'] == 'awaiting_payment'
 
 def test_update_request_rejects_invalid_status(client, monkeypatch):
     monkeypatch.setattr(app_module, 'get_authenticated_user', lambda: FakeUser('driver-1'))
