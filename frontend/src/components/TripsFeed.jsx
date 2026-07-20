@@ -1,17 +1,19 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import {
-  Box, 
-  Center, 
-  Spinner, 
-  Text, 
-  VStack, 
-  Heading, 
-  Card, 
-  CardBody, 
-  Flex, 
-  Badge, 
+  Box,
+  Center,
+  Spinner,
+  Text,
+  VStack,
+  Heading,
+  Card,
+  CardBody,
+  Flex,
+  Badge,
   Button,
   HStack,
+  Input,
+  Select,
   Avatar,
   Modal,
   ModalOverlay,
@@ -63,6 +65,17 @@ function TripsFeed() {
 
   // Where we are in loading the feed: still loading, failed, or ready to show.
   const [status, setStatus] = useState('loading') // 'loading' | 'error' | 'ready'
+
+  // Text the rider has typed to search trips (case-insensitive). Matches against
+  // the trip title, driver name, and destination.
+  const [searchQuery, setSearchQuery] = useState('')
+
+  // Which trip category the rider is filtering by. 'all' shows every category.
+  const [categoryFilter, setCategoryFilter] = useState('all')
+
+  // How the list is ordered. 'date-soon' (soonest departure first) is the
+  // default; the other options order by latest date or by price.
+  const [sortBy, setSortBy] = useState('date-soon') // 'date-soon' | 'date-late' | 'price-low' | 'price-high'
 
   // The driver whose profile pop-up is currently open (null when closed).
   const [selectedDriver, setSelectedDriver] = useState(null)
@@ -255,6 +268,66 @@ function TripsFeed() {
     }
   }, [])
 
+  // The distinct categories present in the loaded trips, used to populate the
+  // filter dropdown. Sorted alphabetically so the options are stable.
+  const categories = useMemo(() => {
+    const set = new Set()
+    trips.forEach((trip) => {
+      if (trip.category) set.add(trip.category)
+    })
+    return Array.from(set).sort()
+  }, [trips])
+
+  // The trips actually shown, after applying the search and category filter,
+  // then ordered by the chosen sort. The search and category are optional: an
+  // empty search and 'all' category show everything. The single search box
+  // matches against the trip title, driver name, and destination.
+  const filteredTrips = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase()
+
+    const matches = trips.filter((trip) => {
+      const haystack = [
+        trip.title,
+        `${trip.users?.first_name || ''} ${trip.users?.last_name || ''}`,
+        trip.destination,
+      ]
+        .join(' ')
+        .toLowerCase()
+      const matchesSearch = !query || haystack.includes(query)
+      const matchesCategory =
+        categoryFilter === 'all' || trip.category === categoryFilter
+      return matchesSearch && matchesCategory
+    })
+
+    // Sort a copy so we never mutate the original trips array. A free/blank
+    // cost counts as 0; a missing/invalid departure time sorts to the end.
+    const sorted = [...matches]
+    if (sortBy === 'price-low') {
+      sorted.sort((a, b) => (Number(a.cost) || 0) - (Number(b.cost) || 0))
+    } else if (sortBy === 'price-high') {
+      sorted.sort((a, b) => (Number(b.cost) || 0) - (Number(a.cost) || 0))
+    } else if (sortBy === 'date-late') {
+      // Latest departure first. Missing/invalid times sort to the end.
+      sorted.sort((a, b) => {
+        const timeA = new Date(a.departure_time).getTime()
+        const timeB = new Date(b.departure_time).getTime()
+        const safeA = Number.isNaN(timeA) ? -Infinity : timeA
+        const safeB = Number.isNaN(timeB) ? -Infinity : timeB
+        return safeB - safeA
+      })
+    } else {
+      // Default to 'date-soon' (soonest departure first).
+      sorted.sort((a, b) => {
+        const timeA = new Date(a.departure_time).getTime()
+        const timeB = new Date(b.departure_time).getTime()
+        const safeA = Number.isNaN(timeA) ? Infinity : timeA
+        const safeB = Number.isNaN(timeB) ? Infinity : timeB
+        return safeA - safeB
+      })
+    }
+    return sorted
+  }, [trips, searchQuery, categoryFilter, sortBy])
+
   return (
     <Box maxW="2xl" w="full" mx="auto" py={8} px={4}>
       
@@ -272,6 +345,46 @@ function TripsFeed() {
           </Button>
         )}
       </Flex>
+
+      {status === 'ready' && trips.length > 0 && (
+        <VStack spacing={3} mb={6} align="stretch">
+          <Input
+            placeholder="Search by title, driver, or destination"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            borderRadius="full"
+            bg="white"
+          />
+          <Flex gap={3} direction={{ base: 'column', sm: 'row' }}>
+            <Select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              borderRadius="full"
+              bg="white"
+              flex="1"
+            >
+              <option value="all">All categories</option>
+              {categories.map((category) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
+            </Select>
+            <Select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              borderRadius="full"
+              bg="white"
+              flex="1"
+            >
+              <option value="date-soon">Sort by: Date (soonest)</option>
+              <option value="date-late">Sort by: Date (latest)</option>
+              <option value="price-low">Sort by: Price (lowest)</option>
+              <option value="price-high">Sort by: Price (highest)</option>
+            </Select>
+          </Flex>
+        </VStack>
+      )}
 
       {status === 'loading' && (
         <Center mt={20}>
@@ -291,9 +404,15 @@ function TripsFeed() {
         </Center>
       )}
 
-      {status === 'ready' && trips.length > 0 && (
+      {status === 'ready' && trips.length > 0 && filteredTrips.length === 0 && (
+        <Center mt={10}>
+            <Text color="gray.500" fontSize="lg">No trips match your search.</Text>
+        </Center>
+      )}
+
+      {status === 'ready' && filteredTrips.length > 0 && (
         <VStack spacing={3} w="full" align="stretch">
-          {trips.map((trip) => (
+          {filteredTrips.map((trip) => (
             <Card key={trip.id} variant="outline" boxShadow="sm" borderRadius="xl" _hover={{ boxShadow: 'md' }}>
               <CardBody p={4}>
                 <Flex
