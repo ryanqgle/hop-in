@@ -15,12 +15,9 @@ import { supabase } from './dbConnection'
 import { apiUrl } from './api'
 import ProfileView from './components/ProfileView.jsx'
 import CreateRideForm from './components/CreateRideForm.jsx'
-<<<<<<< HEAD
 import Dashboard from './components/Dashboard.jsx'
-=======
 import Payment from './components/Payment.jsx'
 import PaymentReturn from './components/PaymentReturn.jsx'
->>>>>>> 46437e2 (feat(payments): add Stripe embedded checkout flow)
 
 // Wraps routes that require a logged-in user. While the session is still
 // loading we render nothing so we don't redirect prematurely; once loaded, an
