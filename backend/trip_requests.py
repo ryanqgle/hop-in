@@ -121,9 +121,20 @@ def update_request(trip_id, request_id):
             if new_seats == 0:
                 trip_update['status'] = 'full'
             supabase.table('trips').update(trip_update).eq('id', trip_id).execute()
+            
+            final_status = 'awaiting_payment'
+            
+        else:
+            final_status = 'declined'
 
-        result = supabase.table('trip_requests').update({'status': new_status}) \
-            .eq('id', request_id).execute()
+        result = (
+            supabase.table('trip_requests')
+            .update({'status': final_status})
+            .eq('id', request_id)
+            .execute()
+        )
+        
         return jsonify(result.data[0])
+    
     except Exception as error:
         return jsonify({'error': str(error)}), 500
