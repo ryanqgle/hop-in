@@ -2,13 +2,13 @@ import os
 import stripe
 from flask import Blueprint, request, jsonify
 from dotenv import load_dotenv
+from db import supabase
 
 payments_bp = Blueprint('payments', __name__)
 
 load_dotenv()
 stripe_secret_key = os.getenv('STRIPE_SECRET_KEY')
 client = stripe.StripeClient(stripe_secret_key)
-webhook_secret = os.getenv('STRIPE_WEBHOOK_SECRET_KEY')
 
 DOMAIN = 'http://localhost:5173'
 
@@ -16,8 +16,6 @@ DOMAIN = 'http://localhost:5173'
 
 @payments_bp.route('/create-checkout-session', methods=['POST'])
 def create_checkout_session():
-<<<<<<< HEAD
-=======
     
     data = request.get_json()
     trip_request_id = data.get("trip_request_id")
@@ -80,7 +78,6 @@ def create_checkout_session():
     payment = payment_result.data[0]
     payment_id = payment['id']
     
->>>>>>> d8e535a (feat(payments): add Stripe payment checkout)
     try:
         session = client.v1.checkout.sessions.create(
             params={
@@ -88,24 +85,20 @@ def create_checkout_session():
                     'price_data': {
                         'currency': 'usd',
                         'product_data': {
-                            'name': 'T-shirt',  # shift to  describe the ride 
+                            'name': f'Ride to {destination}',
                         },
-                        'unit_amount': 2000, # switch to get from trip.costs
+                        'unit_amount': amount_cents,
                     },
                     'quantity': 1,
                 }],
                 'mode': 'payment',
                 'ui_mode': 'embedded_page',
-<<<<<<< HEAD
-                'return_url': DOMAIN + '/payment-return?session_id={CHECKOUT_SESSION_ID}'
-=======
                 'return_url': DOMAIN + '/payment-return?session_id={CHECKOUT_SESSION_ID}',
                 'metadata': {
                     'trip_request_id': str(trip_request_id),
                     'trip_id': str(trip_id),
                     'payment_id': str(payment_id)
                 }
->>>>>>> d8e535a (feat(payments): add Stripe payment checkout)
             },
         )
     except Exception as e:
@@ -147,12 +140,3 @@ def session_status():
 
     
     return jsonify(status=session_status, customer_email=customer_email)
-
-@payments_bp.route('/stripe-webhook', methods=['POST'])
-def stripe_webhook():
-    payload = request.data
-    
-    print("Webhook receieved")
-    print(payload)
-    
-    return jsonify({'received': True}), 200
