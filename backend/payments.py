@@ -3,6 +3,7 @@ import stripe
 from flask import Blueprint, request, jsonify
 from dotenv import load_dotenv
 from db import supabase
+from datetime import datetime, timezone
 
 payments_bp = Blueprint('payments', __name__)
 
@@ -145,8 +146,46 @@ def session_status():
 @payments_bp.route('/stripe-webhook', methods=['POST'])
 def stripe_webhook():
     payload = request.data
+    sig_header = request.headers.get('Stripe-Signature')
     
-    print("Webhook receieved")
-    print(payload)
+    try:
+        event = stripe.Webhook.construct_event(
+            payload,
+            sig_header,
+            webhook_secret
+        )
+    except ValueError:
+        return jsonify({'error': 'Invalid payload'}), 400
+    except stripe.SignatureVerificationError:
+        return jsonify({'error': 'Invalid signature'}), 400
     
+    
+    if event['type'] == 'checkout.session.completed':
+        session = event['data']['object']
+        
+        payment_id = session['metadata']['payment_id']
+        trip_request_id = session['metadata']['trip_request_id']
+        
+        payment_update = (
+            supabase
+            .table('payments')
+            .update({
+                'status': 'paid',
+                'stripe_payment_intent_id': session['payment_intent'],
+                'paid_at': datetime.now(timezone.utc).isoformat()
+            })
+            .eq('id', payment_id)
+            .execute()
+        )
+        
+        trip_request_update = (
+            supabase
+            .table('trip_requests')
+            .update({
+                'status': 'accepted',
+            })
+            .eq('id', trip_request_id)
+            .execute()
+        )
+        
     return jsonify({'received': True}), 200

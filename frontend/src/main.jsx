@@ -112,11 +112,7 @@ function Shell() {
           }
         />
         <Route
-<<<<<<< HEAD
           path="/payment/:tripRequestId"
-=======
-          path="/payment"
->>>>>>> main
           element={
             // <ProtectedRoute>
               <Payment />
