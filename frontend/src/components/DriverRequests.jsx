@@ -115,6 +115,43 @@ function DriverRequests() {
     }
   }
 
+  const handleDeleteTrip = async (tripId) => {
+    if (!window.confirm("Are you sure you want to delete this trip? This will remove all passengers.")) return;
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+
+    try {
+      await fetch(apiUrl(`/api/trips/${tripId}`), {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${session.access_token}` }
+      });
+      setTrips(prev => prev.filter(t => t.id !== tripId));
+    } catch (err) {
+      console.error("Failed to delete trip", err);
+    }
+  };
+
+  const handleKickRider = async (tripId, requestId) => {
+    if (!window.confirm("Are you sure you want to remove this rider from the trip?")) return;
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+
+    try {
+      await fetch(apiUrl(`/api/requests/${requestId}`), {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${session.access_token}` }
+      });
+      setRequestsByTrip((prev) => ({
+        ...prev,
+        [tripId]: prev[tripId].filter((r) => r.id !== requestId)
+      }));
+    } catch (err) {
+      console.error('Error kicking rider:', err);
+    }
+  };
+
   if (loading) return <p>Loading requests...</p>
 
   return (
@@ -139,19 +176,20 @@ function DriverRequests() {
                     <Heading size="md" color="gray.800">{trip.title}</Heading>
                     <Text color="blue.600" fontWeight="bold">→ To {trip.destination}</Text>
                   </Box>
-                  <Button 
-                    size="sm"
-                    colorScheme="blue"
-                    variant="solid"
-                    borderRadius="full"
-                    onClick={() => {
-                      setActiveTripChat(trip.id)
-                      onOpen()
-                    }}
-                  >
-                    Chat
-                </Button>
-                </Flex>
+                  <HStack mt={4} spacing={3} justify="space-between" w="full">
+                  <HStack spacing={3}>
+                    <Button
+                      size="sm"
+                      colorScheme="blue"
+                      variant="solid"
+                      borderRadius="full"
+                      onClick={() => {
+                        setActiveTripChat(trip.id)
+                        onOpen()
+                      }}
+                    >
+                      Chat
+                  </Button>
                 <RouteModalButton
                   tripId={trip.id}
                   mt={3}
@@ -162,8 +200,13 @@ function DriverRequests() {
                 >
                   View Route
                 </RouteModalButton>
-
-              </Box>
+              </HStack>
+                  <Button size="sm" colorScheme="red" variant="ghost" onClick={() => handleDeleteTrip(trip.id)}>
+                    Delete Trip
+                  </Button>
+                </HStack>
+              </Flex>
+            </Box>
 
               <Divider mb={4} />
 
@@ -193,7 +236,7 @@ function DriverRequests() {
                       </Box>
                     </Flex>
 
-                    {request.status === 'pending' && (
+                    {request.status === 'pending' ? (
                       <HStack>
                         <Button size="sm" colorScheme="green" onClick={() => handleDecision(trip.id, request.id, 'accepted')}>
                           Accept
@@ -202,7 +245,11 @@ function DriverRequests() {
                           Decline
                         </Button>
                       </HStack>
-                    )}
+                    ) : request.status === 'accepted' ? (
+                      <Button size="xs" colorScheme="red" variant="ghost" onClick={() => handleKickRider(trip.id, request.id)}>
+                        Remove
+                      </Button>
+                    ) : null}
 
                   </Flex>
                 ))}
