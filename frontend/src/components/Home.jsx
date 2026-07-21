@@ -278,8 +278,8 @@ export default function Home({ onLogin }) {
         </Box>
       </Box>
 
-      <Box id="demo-section" py={{ base: 12, md: 16 }} bg={demoBg}>
-        <Box maxW="7xl" mx="auto" px={{ base: 5, md: 16 }}>
+      <Box id="demo-section" py={{ base: 8, md: 10 }} bg={demoBg}>
+        <Box maxW="7xl" mx="auto" px={{ base: 5, md: 8 }}>
           <Box textAlign="center" mb={8}>
 
             <Heading size="xl" mb={3}>
@@ -291,9 +291,9 @@ export default function Home({ onLogin }) {
             </Text>
           </Box>
 
-          <Card bg={demoCardBg} borderRadius="2xl">
-            <CardBody>
-              <InteractiveDemo />
+          <Card bg={demoCardBg} borderRadius="2xl" maxW="800px" mx="auto">
+            <CardBody p ={{ base: 3, md: 4}}>
+              <InteractiveDemo compact />
             </CardBody>
           </Card>
         </Box>
