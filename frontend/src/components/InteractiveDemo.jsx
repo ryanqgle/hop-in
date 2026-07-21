@@ -243,7 +243,11 @@ const ChatDemo = () => {
                     borderBottomLeftRadius={!msg.isMe ? "sm" : "2xl"}
                     boxShadow="sm"
                   >
-                    <Text fontSize="sm">{msg.text}</Text>
+                    <Text fontSize="sm"
+                          color={msg.isMe ? "white" : "gray.800"}
+                          _dark={{ color: msg.isMe ? "black" : "white" }}
+                        >
+                        {msg.text}</Text>
                   </Box>
                 </Box>
               </Flex>
