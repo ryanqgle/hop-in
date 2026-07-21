@@ -321,7 +321,15 @@ function DriverRequests() {
                         Route
                       </RouteModalButton>
                     </HStack>
-                    <Button size="sm" colorScheme="red" variant="ghost" onClick={() => handleDeleteTrip(trip.id)}>
+                    <Button
+                      size="sm"
+                      bg="red.500"
+                      color="white"
+                      _hover={{ bg: 'red.600' }}
+                      _active={{ bg: 'red.700' }}
+                      _dark={{ bg: 'red.500', color: 'white', _hover: { bg: 'red.600' }, _active: { bg: 'red.700' } }}
+                      onClick={() => handleDeleteTrip(trip.id)}
+                    >
                       Delete Trip
                     </Button>
                   </Flex>
