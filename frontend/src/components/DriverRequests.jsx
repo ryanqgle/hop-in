@@ -41,6 +41,7 @@ function DriverRequests() {
   const [loading, setLoading] = useState(true)
   const { isOpen, onOpen, onClose } = useDisclosure()
   const [activeTripChat, setActiveTripChat] = useState(null)
+  const [payoutsReady, setPayoutsReady] = useState(false)
 
   const { isOpen: isProfileOpen, onOpen: onProfileOpen, onClose: onProfileClose } = useDisclosure()
   const [selectedUser, setSelectedUser] = useState(null)
@@ -62,6 +63,18 @@ function DriverRequests() {
       if (!session) {
         setLoading(false)
         return
+      }
+
+      const payoutRes = await fetch(apiUrl('/api/stripe/connect/status'), {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      })
+
+      const payoutData = await payoutRes.json()
+
+      if (payoutRes.ok) {
+        setPayoutsReady(payoutData.onboarding_complete)
       }
 
       try {
@@ -196,6 +209,27 @@ function DriverRequests() {
     }
   };
 
+  const handleSetupPayouts = async () => {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return;
+
+    const res = await fetch(apiUrl('/api/stripe/connect/onboard'), {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    })
+
+    const data = await res.json()
+
+    if (!res.ok) {
+      console.error(data.error);
+      return
+    }
+
+    window.location.href = data.url;
+  }
+
   if (loading) return <p>Loading requests...</p>
 
   return (
@@ -203,6 +237,14 @@ function DriverRequests() {
       <Heading size="xl" mb={6} color="gray.800">
         Driver Dashboard
       </Heading>
+
+      <Button
+        colorScheme={payoutsReady ? 'green' : 'purple'}
+        mb={6}
+        onClick={handleSetupPayouts}
+      >
+        {payoutsReady ? 'Payouts set up' : 'Set up payouts'}
+      </Button>
 
       {trips.length === 0 && (
         <Text color="gray.500" fontSize="lg" textAlign="center" mt={10}>

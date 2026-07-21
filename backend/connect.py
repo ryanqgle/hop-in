@@ -67,3 +67,56 @@ def create_connect_onboarding_link():
 
     except Exception as error:
         return jsonify({'error': str(error)}), 500
+    
+@connect_bp.route('/stripe/connect/status', methods=['GET'])
+def get_connect_status():
+    from app import get_authenticated_user
+
+    user = get_authenticated_user()
+    if not user:
+        return jsonify({'error': 'Unauthorized'}), 401
+
+    profile_result = (
+        supabase
+        .table('users')
+        .select('*')
+        .eq('id', user.id)
+        .execute()
+    )
+
+    if not profile_result.data:
+        return jsonify({'error': 'User profile not found'}), 404
+
+    profile = profile_result.data[0]
+    stripe_account_id = profile.get('stripe_account_id')
+
+    if not stripe_account_id:
+        return jsonify({
+            'connected': False,
+            'charges_enabled': False,
+            'payouts_enabled': False,
+            'onboarding_complete': False,
+        }), 200
+
+    try:
+        account = client.v1.accounts.retrieve(stripe_account_id)
+
+        charges_enabled = account.charges_enabled
+        payouts_enabled = account.payouts_enabled
+        onboarding_complete = charges_enabled and payouts_enabled
+
+        supabase.table('users').update({
+            'stripe_charges_enabled': charges_enabled,
+            'stripe_payouts_enabled': payouts_enabled,
+            'stripe_onboarding_complete': onboarding_complete,
+        }).eq('id', user.id).execute()
+
+        return jsonify({
+            'connected': True,
+            'charges_enabled': charges_enabled,
+            'payouts_enabled': payouts_enabled,
+            'onboarding_complete': onboarding_complete,
+        }), 200
+
+    except Exception as error:
+        return jsonify({'error': str(error)}), 500
