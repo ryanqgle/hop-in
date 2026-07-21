@@ -43,15 +43,19 @@ function stopIcon(label, bg) {
 
 // A circular pin showing the stop owner's profile picture. Falls back to the person's initials when there's no picture.
 function photoIcon(stop, ring) {
-  const src = stop.profile_picture
-  const inner = src
-    ? `<img src="${escapeHtml(src)}" alt="" style="width:100%;height:100%;object-fit:cover;display:block" />`
-    : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;
-        background:${ring};color:#fff;font-weight:700;font-size:12px">${escapeHtml(initials(stop))}</div>`
+  const src = (stop.profile_picture || '').trim()
+  const initialsLayer =
+    `<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+      background:${ring};color:#fff;font-weight:700;font-size:12px">${escapeHtml(initials(stop))}</div>`
+  // On a load error, hide the image so the initials layer beneath shows through.
+  const imgLayer = src
+    ? `<img src="${escapeHtml(src)}" alt="" onerror="this.style.display='none'"
+        style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover" />`
+    : ''
   return L.divIcon({
     className: '',
-    html: `<div style="width:36px;height:36px;border-radius:50%;overflow:hidden;background:#fff;
-      border:3px solid ${ring};box-shadow:0 0 4px rgba(0,0,0,.5)">${inner}</div>`,
+    html: `<div style="position:relative;width:36px;height:36px;border-radius:50%;overflow:hidden;
+      background:#fff;border:3px solid ${ring};box-shadow:0 0 4px rgba(0,0,0,.5)">${initialsLayer}${imgLayer}</div>`,
     iconSize: [36, 36],
     iconAnchor: [18, 18],
     popupAnchor: [0, -18],
