@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../auth'
-import { apiUrl } from './api'
+import { apiUrl } from '../api'
 import { Center, Spinner, VStack, Text } from '@chakra-ui/react'
 
 export default function RequireProfile({ children }) {
