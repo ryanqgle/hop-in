@@ -1,23 +1,39 @@
-// The landing page shown at "/". This is the first thing visitors see before
-// they log in — a short welcome message and a prompt to sign in.
-import {Box, Button, Flex, Heading, Text, VStack, HStack, Image, useColorModeValue, useToast} from '@chakra-ui/react'
-import {useNavigate} from 'react-router-dom'
-import {useEffect, useState} from 'react'
-import {useAuth} from '../auth.jsx'
-import {apiUrl} from '../api.js'
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import {
+  Box,
+  Button,
+  Card,
+  CardBody,
+  Flex,
+  Heading,
+  HStack,
+  Image,
+  Input,
+  SimpleGrid,
+  Text,
+  useToast,
+  useColorModeValue,
+  VStack,
+} from '@chakra-ui/react'
+import { SearchIcon, AddIcon, ChatIcon, useColorMode } from '@chakra-ui/icons'
+import { useAuth } from '../auth.jsx'
+import { apiUrl } from '../api'
 
 export default function Home() {
   const navigate = useNavigate()
   const toast = useToast()
+  const { token } = useAuth()
+  const [role, setRole] = useState(null)
   const logoSrc = useColorModeValue('/logo-black.PNG', '/logo-white.PNG')
-  const {token} = useAuth()
-  const [role, setRole]= useState(null)
+  const imageBg = useColorModeValue('purple.50', 'gray.800')
+
 
   useEffect(() => {
     if (!token) return
 
     fetch(apiUrl('/api/edit-profile'), {
-      headers: {Authorization: `Bearer ${token}`},
+      headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => res.json())
       .then((data) => {
@@ -36,17 +52,17 @@ export default function Home() {
 
     if (role === 'driver') {
       toast({
-        title: 'Switch to passenger first!',
-        description: 'Go to your profile and change your role to passenger before finding rides',
+        title: 'Switch to rider first.',
+        description: 'Go to your profile and change your role to rider before finding rides',
         status: 'warning',
-        duration: 3000,
+        duration: 4000,
         isClosable: true,
       })
       navigate('/profile')
       return
     }
-    navigate('/dashboard')
 
+    navigate('/dashboard')
   }
 
   const handleOfferRide = () => {
@@ -57,11 +73,11 @@ export default function Home() {
 
     if (role !== 'driver') {
       toast({
-        title: 'Switch to driver first!',
+        title: 'Switch to driver first.',
         description: 'Go to your profile and change your role to driver before offering a ride',
         status: 'warning',
-        duration: 3000,
-        isClosable: true
+        duration: 4000,
+        isClosable: true,
       })
       navigate('/profile')
       return
@@ -71,78 +87,153 @@ export default function Home() {
   }
 
   return (
-    <Box px={{base: 6, md: 16}} py={{base: 12, md: 24}}>
+    <Box maxW="7xk" max="auto" px={{ base: 5, md: 16 }} py={{ base: 10, md: 16 }}>
       <Flex
-        aling="center"
+        align="center"
         justify="space-between"
-        gap={12}
-        direction={{base: 'column', md: 'row'}}
+        gap={{ base: 10, md: 16 }}
+        direction={{ base: 'column', lg: 'row' }}
       >
-        <VStack align={{base: 'center', md: 'flex-start'}} spacing={5} flex="1">
+        <Box flex="1" w="full" textAlign="left">
+          <Text fontWeight="bold" color="gray.600" mb={4}>
+            Share rides with students near you
+          </Text>
+
           <Heading
-            fontSize={{base: '5xl', md: '7xl'}}
-            lineHeight="1"
-            fontWeight="extrabold"
+            fontSize={{ base: '4xl', md: '6xl' }}
+            lineHeight="1.05"
+            mb={5}
           >
-            Hop In
+            Where are you headed?
           </Heading>
 
-          <Text
-            fontSize={{base: '2xl', md: '3xl'}}
-            fontWeight="bold"
-            color="purple.600"
-            textAlign={{ base: 'center', md: 'left'}}
-          >
-            Share rides with fellow students
+          <Text fontSize="lg" color="gray.600" maxW="480px" mb={8}>
+            Find campus rides, offer open seats, and get there together with verified students
           </Text>
 
-          <Text
-            fontSize={{ base: 'md', md: 'lg' }}
-            color="gray.600"
-            maxW="420px"
-            textAlign={{ base: 'center', md: 'left' }}
+          <Card maxW="520px" borderRadius="2xl" boxShadow="md">
+            <CardBody>
+              <VStack spacing={4} align="stretch">
+                <Box>
+                  <Text fontSize="sm" fontWeight="bold" mb={1}>
+                    From
+                  </Text>
+                  <Input
+                    placeholder="Pickup location"
+                    borderRadius="lg"
+                    isReadOnly
+                  />
+                </Box>
+
+                <Box>
+                  <Text fontSize="sm" fontWeight="bold" mb={1}>
+                    To
+                  </Text>
+                  <Input
+                    placeholder="Destination"
+                    borderRadius="lg"
+                    isReadOnly
+                  />
+                </Box>
+
+                <HStack spacing={3}>
+                  <Button
+                    colorScheme="purple"
+                    borderRadius="lg"
+                    leftIcon={<SearchIcon />}
+                    onClick={handleFindRide}
+                  >
+                    Find Rides
+                  </Button>
+
+                  <Button
+                    variant="outline"
+                    colorScheme="purple"
+                    borderRadius="lg"
+                    leftIcon={<AddIcon />}
+                    onClick={handleOfferRide}
+                  >
+                    Offer Ride
+                  </Button>
+                </HStack>
+              </VStack>
+            </CardBody>
+          </Card>
+        </Box>
+
+        <Box flex="1" display="flex" justifyContent="center" alignItems="center">
+          <Box
+            bg={imageBg}
+            borderRadius="3xl"
+            p={{ base: 8, md: 12 }}
+            w="full"
+            maxW="440px"
+            displays="flex"
+            justifyContent="center"
+            alignItems="center"
           >
-            Save money, reduce traffic, and get there together
-          </Text>
-
-          <HStack spacing={4} pt={3}>
-            <Button
-              colorScheme="purple"
-              size="lg"
-              borderRadius="lg"
-              onClick={handleFindRide}
-            >
-              Find a Ride
-            </Button>
-
-            <Button
-              variant="outline"
-              colorScheme="purple"
-              size="lg"
-              borderRadius="lg"
-              onClick={handleOfferRide}
-            >
-              Offer a Ride
-            </Button>
-          </HStack>
-        </VStack>
-
-          <Box flex="1" display="flex" justifyContent="center">
-            <Box
-              bg="purple.50"
-              borderRadius="full"
-              p={{ base: 8, md: 12 }}
-              maxW="520px"
-            >
-              <Image
-                src={logoSrc}
-                alt="Hop In bunny car"
-                maxH={{ base: '220px', md: '360px' }}
-                objectFit="contain"
-              />
-            </Box>
+            <Image
+              src={logoSrc}
+              alt="Hop In bunny car"
+              maxH={{ base: '180px', md: '300px' }}
+              objectFit="contain"
+            />
           </Box>
+        </Box>
       </Flex>
+
+      <Box mt={{ base: 10, md: 12 }}>
+        <Heading size="lg" mb={6}>
+          What you can do with Hop In
+        </Heading>
+
+        <SimpleGrid columns={{ base: 1, md: 3 }} spacing={5}>
+          <Card borderRadius="2xl" variant="outline">
+            <CardBody>
+              <SearchIcon boxSize={6} mb={4} color="purple.500" />
+              <Heading size="md" mb={2}>
+                Find a ride
+              </Heading>
+              <Text color="gray.600" mb={4}>
+                Browse available trips and request a seat
+              </Text>
+              <Button size="sm" variant="ghost" onClick={handleFindRide}>
+                Find rides
+              </Button>
+            </CardBody>
+          </Card>
+
+          <Card borderRadius="2xl" variant="outline">
+            <CardBody>
+              <AddIcon boxSize={6} mb={4} color="purple.500" />
+              <Heading size="md" mb={2}>
+                Offer a ride
+              </Heading>
+              <Text color="gray.600" mb={4}>
+                Post a trip and help other students get there
+              </Text>
+              <Button size="sm" variant="ghost" onClick={handleOfferRide}>
+                Create ride
+              </Button>
+            </CardBody>
+          </Card>
+
+          <Card borderRadius="2xl" variant="outline">
+            <CardBody>
+              <ChatIcon boxSize={6} mb={4} color="purple.500" />
+              <Heading size="md" mb={2}>
+                Chat and pay
+              </Heading>
+              <Text color="gray.600" mb={4}>
+                Coordinate pickup details and pay securely after approval
+              </Text>
+              <Button size="sm" variant="ghost" onClick={() => navigate('/dashboard')}>
+                View activity
+              </Button>
+            </CardBody>
+          </Card>
+        </SimpleGrid>
+      </Box>
     </Box>
   )
 }
