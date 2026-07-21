@@ -5,7 +5,8 @@ import { apiUrl } from '../api'
 import {
     Box, Flex, VStack, Text, Input, IconButton, Avatar,
     AvatarGroup, Tooltip, useDisclosure, Modal, ModalOverlay,
-    ModalContent, ModalHeader, ModalCloseButton, ModalBody, Heading, Badge
+    ModalContent, ModalHeader, ModalCloseButton, ModalBody, Heading, Badge,
+    HStack
 } from '@chakra-ui/react'
 import { ArrowUpIcon, CloseIcon } from '@chakra-ui/icons'
 
@@ -22,18 +23,15 @@ const parseMessage = (rawText) => {
             return parsed
         }
     } catch (e) {
-
         // if it's not JSON, it's just a standard text message
     }
     return { text: rawText, isReply: false }
 }
 
-
-function TripChat({tripId, currUserId}){
+function TripChat({tripId, currUserId, tripTitle = 'Chat'}){
     const { token } = useAuth()
     const [messages, setMessages] = useState([])
     const [newMessage, setNewMessage] = useState("")
-    const [tripTitle, setTripTitle] = useState("Loading...")
     const [participants, setParticipants] = useState([])
     const [replyingTo, setReplyingTo] = useState(null)
     const [hoveredMsgId, setHoveredMsgId] = useState(null)
@@ -45,18 +43,6 @@ function TripChat({tripId, currUserId}){
     // fetch initial data and set up the real time websocket listener
     useEffect(() => {
         if (!token) return
-
-        // grab the title of the trip for the chat header
-        const fetchTripTitle = async () => {
-            const { data, error } = await supabase
-                .from('trips')
-                .select('title')
-                .eq('id', tripId)
-                .single()
-            
-            if (data && !error) setTripTitle(data.title)
-        }
-        fetchTripTitle()
 
         const fetchParticipants = async () => {
         const tripResult = await supabase
@@ -218,10 +204,12 @@ function TripChat({tripId, currUserId}){
     <Flex direction="column" h="full" bg="white">
             
             {/* participants*/}
-            <Flex align="center" justify="space-between" pl={4} pr={12} borderBottom="1px solid" borderColor="gray.100" bg="gray.50">
-                <Heading size="sm" color="gray.800" isTruncated maxW="70%">
-                    {tripTitle}
-                </Heading>
+            <Flex align="center" justify="space-between" pl={4} pr={12} py={3} borderBottom="1px solid" borderColor="gray.100" bg="gray.50">
+                <HStack spacing={2} minW={0}>
+                    <Heading size="sm" color="gray.800" whiteSpace="normal" noOfLines={2} maxW="260px">
+                        {tripTitle}
+                    </Heading>
+                </HStack>
 
                 <AvatarGroup size="sm" max={4} spacing="-0.5rem">
                     {participants.map((user) => (
@@ -343,7 +331,7 @@ function TripChat({tripId, currUserId}){
                                     <Text 
                                         fontSize="2xs" 
                                         color="gray.400" 
-                                        textAlign={isMe ? "right" : "left"} 
+                                        textAlign={isMe ? "right" : "left"}
                                         mt={1}
                                         mr={isMe ? 1 : 0}
                                         ml={!isMe ? 1 : 0}
