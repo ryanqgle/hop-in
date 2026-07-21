@@ -299,7 +299,7 @@ function DriverRequests() {
           const tripReqs = requestsByTrip[trip.id] || []
           const pending = tripReqs.filter(r => r.status === 'pending')
           const awaitingPayment = tripReqs.filter(r => r.status === 'awaiting_payment')
-          const accepted = tripReqs.filter(r => r.status === 'accepted')
+          const accepted = tripReqs.filter(r => r.status === 'accepted' || r.status === 'picked_up')
 
           return (
             <Card key={trip.id} variant="outline" boxShadow="sm" borderRadius="xl" >
@@ -353,7 +353,7 @@ function DriverRequests() {
                                           </Flex>
                                           <Flex wrap="wrap" gap={2} w={{ base: "full", sm: "auto" }}>
                                             <Button size="xs" colorScheme="green" onClick={() => handlePickupStatus(trip.id, request.id, 'picked_up')}>
-                                              Hopped In
+                                              {request.status === 'picked_up' ? 'In Car' : 'Hopped In'}
                                              </Button>
                                             <Button size="xs" colorScheme="red" variant="outline" onClick={() => handlePickupStatus(trip.id, request.id, 'no_show')}>
                                               No-show
