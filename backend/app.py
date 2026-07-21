@@ -352,6 +352,9 @@ app.register_blueprint(requests_bp)
 from payments import payments_bp
 app.register_blueprint(payments_bp, url_prefix="/api")
 
+from connect import connect_bp
+app.register_blueprint(connect_bp, url_prefix="/api")
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
