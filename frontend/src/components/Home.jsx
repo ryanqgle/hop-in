@@ -20,7 +20,7 @@ import { useAuth } from "../auth.jsx";
 import { apiUrl } from "../api";
 import InteractiveDemo from './InteractiveDemo.jsx'
 
-export default function Home() {
+export default function Home({ onLogin }) {
   const navigate = useNavigate();
   const toast = useToast();
   const { token } = useAuth();
@@ -31,6 +31,20 @@ export default function Home() {
   const iconColor = useColorModeValue("black", "white");
   const demoBg = useColorModeValue("gray.50", "gray.900")
   const demoCardBg = useColorModeValue("white", "gray.800")
+
+  // After a logged-out user picks a button we stash where they wanted to go,
+  // open the login modal, and let them sign in / sign up (Google/Microsoft
+  // OAuth redirects the browser back to the home page). Once they're logged in
+  // we send them on to that saved destination.
+  useEffect(() => {
+    if (!token) return;
+
+    const dest = sessionStorage.getItem("postLoginRedirect");
+    if (dest) {
+      sessionStorage.removeItem("postLoginRedirect");
+      navigate(dest);
+    }
+  }, [token, navigate]);
 
   useEffect(() => {
     if (!token) return;
@@ -47,9 +61,16 @@ export default function Home() {
       .catch((err) => console.error("Failed to load role:", err));
   }, [token]);
 
+  // Remember where the user was trying to go, then open the login modal. The
+  // redirect effect above finishes the trip once they're signed in.
+  const requireAuth = (dest) => {
+    sessionStorage.setItem("postLoginRedirect", dest);
+    onLogin?.();
+  };
+
   const handleFindRide = () => {
     if (!token) {
-      navigate("/login");
+      requireAuth("/dashboard");
       return;
     }
 
@@ -71,7 +92,7 @@ export default function Home() {
 
   const handleOfferRide = () => {
     if (!token) {
-      navigate("/login");
+      requireAuth("/create-ride");
       return;
     }
 
@@ -89,6 +110,15 @@ export default function Home() {
     }
 
     navigate("/create-ride");
+  };
+
+  const handleViewActivity = () => {
+    if (!token) {
+      requireAuth("/dashboard");
+      return;
+    }
+
+    navigate("/dashboard");
   };
 
   return (
@@ -238,7 +268,7 @@ export default function Home() {
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={() => navigate("/dashboard")}
+                  onClick={handleViewActivity}
                 >
                   View activity
                 </Button>
