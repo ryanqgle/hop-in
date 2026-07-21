@@ -15,10 +15,19 @@ webhook_secret = os.getenv('STRIPE_WEBHOOK_SECRET_KEY')
 DOMAIN = os.getenv('FRONTEND_URL', 'http://localhost:5173')
 
 
+def get_authenticated_user():
+    from app import get_authenticated_user as get_authenticated_user_from_app
+
+    return get_authenticated_user_from_app()
+
+
 
 @payments_bp.route('/create-checkout-session', methods=['POST'])
 def create_checkout_session():
-    
+    user = get_authenticated_user()
+    if not user:
+        return jsonify({'error': 'Unauthorized'}), 401
+
     data = request.get_json()
     trip_request_id = data.get("trip_request_id")
     
@@ -37,6 +46,9 @@ def create_checkout_session():
         return jsonify({'error': 'trip request not found'}), 404
     
     trip_request = trip_request_result.data[0]
+
+    if trip_request.get('passenger_id') != user.id:
+        return jsonify({'error': 'Forbidden'}), 403
     
     if trip_request['status'] != 'awaiting_payment':
         return jsonify({'error': 'request is not ready for payment'}), 400
@@ -61,6 +73,25 @@ def create_checkout_session():
     
     amount_cents = int(float(trip['cost']) * 100)
     destination = trip.get('destination', 'Ride')
+    
+    driver_id = trip['driver_id']
+
+    driver_result = (
+        supabase
+        .table('users')
+        .select('stripe_account_id, stripe_charges_enabled, stripe_payouts_enabled')
+        .eq('id', driver_id)
+        .execute()
+    )
+
+    if not driver_result.data:
+        return jsonify({'error': 'driver not found'}), 404
+
+    driver = driver_result.data[0]
+    driver_stripe_account_id = driver.get('stripe_account_id')
+
+    if not driver_stripe_account_id:
+        return jsonify({'error': 'driver has not set up payouts'}), 400
     
     existing_payment_result = (
         supabase
@@ -123,6 +154,11 @@ def create_checkout_session():
                 'mode': 'payment',
                 'ui_mode': 'embedded_page',
                 'return_url': DOMAIN + '/payment-return?session_id={CHECKOUT_SESSION_ID}',
+                'payment_intent_data': {
+                    'transfer_data': {
+                        'destination': driver_stripe_account_id,
+                    },
+                },
                 'metadata': {
                     'trip_request_id': str(trip_request_id),
                     'trip_id': str(trip_id),

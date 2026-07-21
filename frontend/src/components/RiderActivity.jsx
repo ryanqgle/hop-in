@@ -27,11 +27,32 @@ import {
 import { useAuth } from '../auth.jsx'
 import { apiUrl } from '../api'
 import TripChat from './TripChat.jsx'
+import RouteModalButton from './RouteModalButton.jsx'
 
 {/*
     This component acts as the Activity tab for users who are riders (passengers).
     It fetches and displays the status of all trips the rider has requested to join.
   */}
+
+function formatDeparture(value) {
+  if (!value) return 'Time TBD'
+
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+
+  return date.toLocaleString(undefined,  {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  })
+}
+
+function formatCost(value) {
+  if (!value) return 'Free'
+  return `$${value}`
+}
 
 export default function RiderActivity() {
   const { token } = useAuth()
@@ -40,6 +61,7 @@ export default function RiderActivity() {
   const [loading, setLoading] = useState(true)
   const { isOpen, onOpen, onClose } = useDisclosure()
   const [activeTripChat, setActiveTripChat] = useState(null)
+  const [activeTripTitle, setActiveTripTitle] = useState('')
 
   useEffect(() => {
     if (!token) return
@@ -92,41 +114,83 @@ export default function RiderActivity() {
           {upcomingTrips.map(req => (
             <Card key={req.id} variant="outline" boxShadow="sm" borderRadius="xl" border="1px solid" borderColor="gray.100">
               <CardBody>
-                <Flex justify="space-between" align="flex-start" mb={2}>
+                <Flex justify="space-between" align="flex-start" mb={3}>
                   <Box>
-                     <Heading size="sm" mb={1}>{req.trips.title}</Heading>
-                     <Text color="blue.600" fontWeight="bold" fontSize="sm">
-                       → To {req.trips.destination}
-                     </Text>
+                    <Heading size="sm" mb={1}>{req.trips.title}</Heading>
+                    <Text fontSize="sm" color="gray.600">
+                      Driver: {req.trips.users?.first_name || 'Unknown'}
+                    </Text>
                   </Box>
-                  <HStack>
-                    <Button
-                        size="sm"
-                        colorScheme="blue"
-                        borderRadius="full"
-                        onClick={() => {
-                            setActiveTripChat(req.trips.id)
-                            onOpen()
-                        }}
-                    >
-                        Chat
-                    </Button>
-                    <Button size="sm"
-                      colorScheme="red"
-                      variant="outline"
-                      borderRadius="full"
-                      onClick={() => handleCancelRequest(req.id)}>
-                        Leave
-                    </Button>
-                  </HStack>
+
+                  <Badge colorScheme="green" borderRadius="full" px={3} py={1}>
+                    Paid
+                  </Badge>
                 </Flex>
-                
-                <Flex align="center" bg="gray.50" p={2} mt={3} borderRadius="md" border="1px solid" borderColor="gray.100">
-                  <Avatar size="xs" src={req.trips.users?.profile_picture} mr={2} />
-                  <Text fontSize="sm" color="gray.700" fontWeight="bold">
-                    Driver: {req.trips.users?.first_name || 'Unknown'}
-                  </Text>
-                </Flex>
+
+                <VStack align="stretch" spacing={3} mb={4}>
+                  <Box>
+                    <Text fontSize="xs" fontWeight="bold" color="gray.500" textTransform="uppercase">
+                      Destination
+                    </Text>
+                    <Text fontSize="sm">{req.trips.destination || 'Not listed'}</Text>
+                  </Box>
+
+                  <Box>
+                    <Text fontSize="xs" fontWeight="bold" color="gray.500" textTransform="uppercase">
+                      Departure
+                    </Text>
+                    <Text fontSize="sm">{formatDeparture(req.trips.departure_time)}</Text>
+                  </Box>
+
+                  {req.pickup_address && (
+                    <Box>
+                      <Text fontSize="xs" fontWeight="bold" color="gray.500" textTransform="uppercase">
+                        Pickup
+                      </Text>
+                      <Text fontSize="sm">{req.pickup_address}</Text>
+                    </Box>
+                  )}
+
+                  <Flex justify="space-between">
+                    <Text fontWeight="bold">{formatCost(req.trips.cost)}</Text>
+                    <Text fontSize="sm" color="gray.500">
+                      Seat confirmed
+                    </Text>
+                  </Flex>
+                </VStack>
+
+                <HStack spacing={2}>
+                  <Button
+                    size="sm"
+                    borderRadius="full"
+                    onClick={() => {
+                      setActiveTripChat(req.trips.id)
+                      setActiveTripTitle(req.trips.title)
+                      onOpen()
+                    }}
+                  >
+                    Chat
+                  </Button>
+
+                  <RouteModalButton
+                    tripId={req.trips.id}
+                    size="sm"
+                    variant="outline"
+                    borderRadius="full"
+                  >
+                    Route
+                  </RouteModalButton>
+
+                  <Button
+                    size="sm"
+                    colorScheme="red"
+                    variant="ghost"
+                    borderRadius="full"
+                    onClick={() => handleCancelRequest(req.id)}
+                  >
+                    Leave
+                  </Button>
+                </HStack>
               </CardBody>
             </Card>
           ))}
@@ -138,25 +202,57 @@ export default function RiderActivity() {
       {/* Awaiting payment */}
       <Heading size="md" mb={4} color="gray.800">Awaiting Payment</Heading>
       {awaitingPaymentTrips.length === 0 ? (
-        <Text color="gray.500" mb={6}>No rides waiting for payment.</Text>
+        <Text color="gray.500" mb={6}>No rides waiting for payment</Text>
       ) : (
         <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={5} w="full" mb={8}>
           {awaitingPaymentTrips.map(req => (
             <Card key={req.id} variant="outline" bg="blue.50" borderRadius="xl" border="1px solid" borderColor="blue.100">
-              <CardBody py={3}>
-                <Flex justify="space-between" align="center">
+              <CardBody>
+                <Flex justify="space-between" align="flex-start" mb={3}>
                   <Box>
-                    <Heading size="sm" color="gray.700" mb={1}>{req.trips.title}</Heading>
-                    <Text fontSize="sm" color="gray.600">{req.trips.destination}</Text>
+                    <Heading size="sm" mb={1}>{req.trips.title}</Heading>
+                    <Text fontSize="sm" color="gray.600">
+                      Driver: {req.trips.users?.first_name || 'Unknown'}
+                    </Text>
                   </Box>
-                  <Button
-                    size="sm"
-                    colorScheme="blue"
-                    onClick={() => navigate(`/payment/${req.id}`)}
-                  >
-                    Pay Now
-                  </Button>
+
+                  <Badge colorScheme="blue" borderRadius="full" px={3} py={1}>
+                    Awaiting Pay
+                  </Badge>
                 </Flex>
+
+                <VStack align="stretch" spacing={3} mb={4}>
+                  <Box>
+                    <Text fontSize="xs" fontWeight="bold" color="gray.500" textTransform="uppercase">
+                      Destination
+                    </Text>
+                    <Text fontSize="sm">{req.trips.destination || 'Not listed'}</Text>
+                  </Box>
+
+                  <Box>
+                    <Text fontSize="xs" fontWeight="bold" color="gray.500" textTransform="uppercase">
+                      Departure
+                    </Text>
+                    <Text fontSize="sm">{formatDeparture(req.trips.departure_time)}</Text>
+                  </Box>
+
+                  <Flex justify="space-between">
+                    <Text fontWeight="bold">{formatCost(req.trips.cost)}</Text>
+                    <Text fontSize="sm" color="gray.500">
+                      Pay to confirm your seat
+                    </Text>
+                  </Flex>
+                </VStack>
+
+                <Button
+                  size="sm"
+                  borderRadius="full"
+                  w="full"
+                  colorScheme="blue"
+                  onClick={() => navigate(`/payment/${req.id}`)}
+                >
+                  Pay Now
+                </Button>
               </CardBody>
             </Card>
           ))}
@@ -168,27 +264,54 @@ export default function RiderActivity() {
       {/* pending req */}
       <Heading size="md" mb={4} color="gray.800">Pending Requests</Heading>
       {pendingTrips.length === 0 ? (
-        <Text color="gray.500">No pending requests.</Text>
+        <Text color="gray.500">No pending requests</Text>
       ) : (
         <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={5} w="full">
           {pendingTrips.map(req => (
             <Card key={req.id} variant="outline" bg="gray.50" borderRadius="xl" border="1px solid" borderColor="gray.100">
-              <CardBody py={3}>
-                <Flex justify="space-between" align="center">
+              <CardBody>
+                <Flex justify="space-between" align="flex-start" mb={3}>
                   <Box>
-                    <Heading size="sm" color="gray.600" mb={1}>{req.trips.title}</Heading>
-                    <Text fontSize="sm" color="gray.500">{req.trips.destination}</Text>
+                    <Heading size="sm" mb={1}>{req.trips.title}</Heading>
+                    <Text fontSize="sm" color="gray.600">
+                      Driver: {req.trips.users?.first_name || 'Unknown'}
+                    </Text>
                   </Box>
-                  <HStack>
-                    <Badge colorScheme="yellow" fontSize="2xs">Pending</Badge>
-                    <Button size="xs"
-                      colorScheme="red"
-                      variant="ghost"
-                      onClick={() => handleCancelRequest(req.id)}>
-                      Cancel
-                    </Button>
-                  </HStack>
+
+                  <Badge colorScheme="yellow" borderRadius="full" px={3} py={1}>
+                    Pending
+                  </Badge>
                 </Flex>
+
+                <VStack align="stretch" spacing={3} mb={4}>
+                  <Box>
+                    <Text fontSize="xs" fontWeight="bold" color="gray.500" textTransform="uppercase">
+                      Destination
+                    </Text>
+                    <Text fontSize="sm">{req.trips.destination || 'Not listed'}</Text>
+                  </Box>
+
+                  <Box>
+                    <Text fontSize="xs" fontWeight="bold" color="gray.500" textTransform="uppercase">
+                      Departure
+                    </Text>
+                    <Text fontSize="sm">{formatDeparture(req.trips.departure_time)}</Text>
+                  </Box>
+
+                  <Text fontSize="sm" color="gray.500">
+                    Waiting for the driver to accept
+                  </Text>
+                </VStack>
+
+                <Button
+                  size="sm"
+                  colorScheme="red"
+                  variant="ghost"
+                  borderRadius="full"
+                  onClick={() => handleCancelRequest(req.id)}
+                >
+                  Cancel Request
+                </Button>
               </CardBody>
             </Card>
           ))}
@@ -204,7 +327,7 @@ export default function RiderActivity() {
 
             {activeTripChat && (
               <Box flex="1" overflow="hidden">
-                 <TripChat tripId={activeTripChat} currUserId={requests[0]?.passenger_id} />
+                 <TripChat tripId={activeTripChat} currUserId={requests[0]?.passenger_id} tripTitle={activeTripTitle} />
               </Box>
             )}
 

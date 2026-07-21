@@ -33,7 +33,7 @@ const PIN_ICON = L.icon({
 
 // Default map center when the picker opens with no prior location. Rice
 // University — a reasonable neutral starting view; the pin is what matters.
-const DEFAULT_CENTER = [29.7174, -95.4018]
+const DEFAULT_CENTER = [40.7589, -73.9851]
 
 // Searches are restricted to roughly this many miles around the current map
 // center, so results stay local while still
@@ -141,8 +141,8 @@ function LocationPicker({ initialValue = null, onChange, height = 300 }) {
   )
 
   // Move the pin to a new spot and detect it. If we already know the address
-  // (e.g. from a search result) we use it directly; otherwise we take the
-  // coordinates and reverse-geocode to fill the label in.
+  // (e.g. from a search result) we use it directly; otherwise the pin's
+  // coordinates are the location:
   const handlePick = useCallback(
     (lat, lng, knownAddress = null) => {
       setPos({ lat, lng })
@@ -150,8 +150,9 @@ function LocationPicker({ initialValue = null, onChange, height = 300 }) {
         setAddress(knownAddress)
         onChange?.({ lat, lng, address: knownAddress })
       } else {
-        setAddress('')
-        onChange?.({ lat, lng, address: '' })
+        const coordLabel = `${lat.toFixed(5)}, ${lng.toFixed(5)}`
+        setAddress(coordLabel)
+        onChange?.({ lat, lng, address: coordLabel })
         reverseGeocode(lat, lng)
       }
     },
@@ -244,6 +245,7 @@ function LocationPicker({ initialValue = null, onChange, height = 300 }) {
               size="sm"
               placeholder="Search a place or address (e.g. Target)"
               value={query}
+              isRequired={false}
               onChange={(e) => {
                 setQuery(e.target.value)
                 runSearch(e.target.value)

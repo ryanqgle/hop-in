@@ -97,6 +97,7 @@ function TripsFeed() {
   // pickup location they've chosen on the map ({ lat, lng, address }).
   const [pickupTrip, setPickupTrip] = useState(null)
   const [pickupLocation, setPickupLocation] = useState(null)
+  const [pendingTripIds, setPendingTripIds] = useState(() => new Set())
 
   // Controls the driver-profile pop-up (open/close).
   const { isOpen, onOpen, onClose } = useDisclosure()
@@ -169,21 +170,22 @@ function TripsFeed() {
       const data = await res.json()
 
       if (!res.ok) {
-        throw new Error(data.message || data.error || 'Failed to send request.')
+        throw new Error(data.message || data.error || 'Could not request this ride')
       }
 
       toast({
         title: 'Request sent!',
-        description: "We've notified the driver of your request.",
+        description: "We've notified the driver of your request",
         status: 'success',
         duration: 3000,
         isClosable: true,
       })
+      setPendingTripIds(prev => new Set(prev).add(pickupTrip.id))
       pickup.onClose()
     } catch (err) {
       toast({
         title: 'Could not send request.',
-        description: err.message || 'Could not send request.',
+        description: err.message || 'Could not send request',
         status: 'error',
         duration: 3000,
         isClosable: true,
@@ -237,6 +239,9 @@ function TripsFeed() {
         if (!active || !Array.isArray(data)) return
         const accepted = data.filter((r) => r.status === 'accepted').map((r) => r.trip_id)
         setAcceptedTripIds(new Set(accepted))
+
+        const pending = data.filter((r) => r.status === 'pending').map((r) => r.trip_id)
+        setPendingTripIds(new Set(pending))
       })
       .catch(() => {})
 
@@ -332,12 +337,11 @@ function TripsFeed() {
     <Box maxW="2xl" w="full" mx="auto" py={8} px={4}>
       
       <Flex justify="space-between" align="center" mb={6}>
-        <Heading size="xl" color="gray.800">
+        <Heading size="xl">
           Available Rides
         </Heading>
         {role === 'driver' && (
           <Button
-            colorScheme="blue"
             borderRadius="full"
             onClick={() => navigate('/create-ride')}
           >
@@ -352,15 +356,11 @@ function TripsFeed() {
             placeholder="Search by title, driver, or destination"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            borderRadius="full"
-            bg="white"
           />
           <Flex gap={3} direction={{ base: 'column', sm: 'row' }}>
             <Select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              borderRadius="full"
-              bg="white"
               flex="1"
             >
               <option value="all">All categories</option>
@@ -373,8 +373,6 @@ function TripsFeed() {
             <Select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              borderRadius="full"
-              bg="white"
               flex="1"
             >
               <option value="date-soon">Sort by: Date (soonest)</option>
@@ -400,13 +398,13 @@ function TripsFeed() {
 
       {status === 'ready' && trips.length === 0 && (
         <Center mt={10}>
-            <Text color="gray.500" fontSize="lg">No trips posted yet. Check back soon!</Text>
+            <Text fontSize="lg">No trips posted yet. Check back soon!</Text>
         </Center>
       )}
 
       {status === 'ready' && trips.length > 0 && filteredTrips.length === 0 && (
         <Center mt={10}>
-            <Text color="gray.500" fontSize="lg">No trips match your search.</Text>
+            <Text fontSize="lg">No trips match your search.</Text>
         </Center>
       )}
 
@@ -424,7 +422,7 @@ function TripsFeed() {
                   borderRadius="md"
                   p={1}
                   m={-1}
-                  _hover={{ bg: 'gray.50' }}
+                  _hover={{ bg: 'gray.50', _dark: { bg: 'gray.700' } }}
                 >
                   <Avatar
                     size="sm"
@@ -432,15 +430,15 @@ function TripsFeed() {
                     src={trip.users?.profile_picture}
                     mr={3}
                   />
-                  <Text fontWeight="bold" color="gray.700">
+                  <Text fontWeight="bold">
                     Driver: {trip.users?.first_name || 'Unknown'} {trip.users?.last_name || 'Driver'}
                   </Text>
                 </Flex>
                 <Flex justify="space-between" align="flex-start" mb={2}>
-                  <Heading size="md" color="gray.800">
+                  <Heading size="md">
                     {trip.title}
                   </Heading>
-                  <Badge colorScheme={trip.cost ? "green" : "blue"} fontSize="sm" px={2} py={1} borderRadius="md">
+                  <Badge colorScheme={trip.cost ? "green" : "gray"} fontSize="sm" px={2} py={1} borderRadius="md">
                     {trip.cost ? `$${trip.cost}` : 'Free'}
                   </Badge>
                 </Flex>
@@ -449,7 +447,6 @@ function TripsFeed() {
                   textAlign="left"
                   fontSize="lg"
                   fontWeight="bold"
-                  color="blue.600"
                   mb={2}
                   cursor="pointer"
                   onClick={() => openMap(trip.destination)}
@@ -459,7 +456,7 @@ function TripsFeed() {
                   → To {truncate(trip.destination)}
                 </Text>
 
-                <HStack spacing={2} color="gray.500" fontSize="sm" mb={4}>
+                <HStack spacing={2} fontSize="sm" mb={4}>
                   <Text>{formatDeparture(trip.departure_time)}</Text>
                   <Text>•</Text>
                   <Text fontWeight="bold">{trip.available_seats} seat{trip.available_seats === 1 ? '' : 's'} left</Text>
@@ -472,7 +469,7 @@ function TripsFeed() {
                 </HStack>
 
                 {trip.description && (
-                  <Text color="gray.600" mb={4}>
+                  <Text mb={4}>
                     {trip.description}
                   </Text>
                 )}
@@ -480,23 +477,31 @@ function TripsFeed() {
                 {acceptedTripIds.has(trip.id) ? (
                   <RouteModalButton
                     tripId={trip.id}
-                    colorScheme="blue"
                     variant="solid"
                     borderRadius="full"
                     size="sm"
                   >
                     View Route
                   </RouteModalButton>
+                ): pendingTripIds.has(trip.id) ? (
+                  <Button
+                    width="x"
+                    variant="solid"
+                    borderRadius="full"
+                    size="sm"
+                    isDisabled
+                  >
+                    Request Pending
+                  </Button>
                 ) : (
                   <Button
-                  colorScheme="blue"
                   width="x"
                   variant="solid"
                   borderRadius="full"
                   size="sm"
                   onClick={() => openPickup(trip)}
                   >
-                    Request to Join
+                    {trip.available_seats <= 0 ? 'Join Waitlist' : 'Request to Join'}
                   </Button>
                 )}
 
@@ -520,16 +525,16 @@ function TripsFeed() {
                 name={`${selectedDriver?.first_name || ''} ${selectedDriver?.last_name || ''}`}
                 src={selectedDriver?.profile_picture}
               />
-              <Heading size="md" color="gray.800">
+              <Heading size="md" >
                 {selectedDriver?.first_name || 'Unknown'} {selectedDriver?.last_name || 'Driver'}
               </Heading>
               {selectedDriver?.role && (
-                <Badge colorScheme="blue" fontSize="sm" px={2} py={1} borderRadius="md">
+                <Badge fontSize="sm" px={2} py={1} borderRadius="md">
                   {selectedDriver.role}
                 </Badge>
               )}
               {selectedDriver?.school && (
-                <Text color="gray.600">{selectedDriver.school}</Text>
+                <Text>{selectedDriver.school}</Text>
               )}
             </VStack>
           </ModalBody>
@@ -568,7 +573,7 @@ function TripsFeed() {
           <ModalHeader>Set your pickup location</ModalHeader>
           <ModalCloseButton />
           <ModalBody pb={6}>
-            <Text mb={3} color="gray.600">
+            <Text mb={3}>
               Where should {pickupTrip?.users?.first_name || 'the driver'} pick you up
               {pickupTrip?.title ? ` for “${pickupTrip.title}”` : ''}?
             </Text>
@@ -576,7 +581,6 @@ function TripsFeed() {
             <Button
               mt={4}
               w="full"
-              colorScheme="blue"
               borderRadius="full"
               onClick={submitRequest}
               isLoading={requesting === pickupTrip?.id}
