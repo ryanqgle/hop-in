@@ -76,7 +76,7 @@ function Shell() {
       />
       <Box as="main" flex="1" minH="0" w="100%" display="flex" flexDirection="column">
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<Home onLogin={() => setShowLogin(true)} />} />
         <Route
           path="/feed"
           element={
@@ -142,7 +142,16 @@ function Shell() {
       </Routes>
       </Box>
       </Box>
-      {showLogin && <Login onClose={() => setShowLogin(false)} />}
+      {showLogin && (
+        <Login
+          onClose={() => {
+            setShowLogin(false)
+            // Drop any pending post-login redirect if the user closes the
+            // modal without actually signing in.
+            sessionStorage.removeItem('postLoginRedirect')
+          }}
+        />
+      )}
     </ChakraProvider>
   )
 }
