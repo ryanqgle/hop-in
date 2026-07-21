@@ -5,7 +5,8 @@ import { apiUrl } from '../api'
 import {
     Box, Flex, VStack, Text, Input, IconButton, Avatar,
     AvatarGroup, Tooltip, useDisclosure, Modal, ModalOverlay,
-    ModalContent, ModalHeader, ModalCloseButton, ModalBody, Heading, Badge
+    ModalContent, ModalHeader, ModalCloseButton, ModalBody, Heading, Badge,
+    HStack
 } from '@chakra-ui/react'
 import { ArrowUpIcon } from '@chakra-ui/icons'
 
@@ -14,11 +15,11 @@ import { ArrowUpIcon } from '@chakra-ui/icons'
  subscribing to live database updates via Supabase, and sending new messages.
  */}
 
-function TripChat({tripId, currUserId}){
+function TripChat({tripId, currUserId, tripTitle = 'Chat'}){
     const { token } = useAuth()
     const [messages, setMessages] = useState([])
     const [newMessage, setNewMessage] = useState("")
-    const [tripTitle, setTripTitle] = useState("Loading...")
+    const [participants, setParticipants] = useState([])
 
     const messagesEndRef = useRef(null) // used to auto scroll the chat view to the bottom when new messages arrive
     const { isOpen, onOpen, onClose } = useDisclosure()
@@ -28,17 +29,50 @@ function TripChat({tripId, currUserId}){
     useEffect(() => {
         if (!token) return
 
-        // grab the title of the trip for the chat header
-        const fetchTripTitle = async () => {
-            const { data, error } = await supabase
-                .from('trips')
-                .select('title')
-                .eq('id', tripId)
-                .single()
-            
-            if (data && !error) setTripTitle(data.title)
+        const fetchParticipants = async () => {
+        const tripResult = await supabase
+            .from('trips')
+            .select('driver_id')
+            .eq('id', tripId)
+            .single()
+
+        const driverId = tripResult.data?.driver_id
+
+        const driverResult = await supabase
+            .from('users')
+            .select('id, first_name, last_name, profile_picture, role, school')
+            .eq('id', driverId)
+            .single()
+
+        const requestsRes = await fetch(apiUrl(`/api/trips/${tripId}/requests`), {
+            headers: { Authorization: `Bearer ${token}` }
+        })
+
+        const requests = await requestsRes.json()
+
+        const paidRiders = requests
+            .filter((request) => ['accepted', 'picked_up'].includes(request.status))
+            .map((request) => ({
+            id: request.users?.id || request.passenger_id,
+            ...request.users,
+            }))
+
+        const allParticipants = []
+
+        if (driverResult.data) {
+            allParticipants.push(driverResult.data)
         }
-        fetchTripTitle()
+
+        paidRiders.forEach((rider) => {
+            if (rider.id && !allParticipants.find((user) => user.id === rider.id)) {
+            allParticipants.push(rider)
+            }
+        })
+
+        setParticipants(allParticipants)
+        }
+
+        fetchParticipants()
 
         // fetch all prev chat history
         fetch(apiUrl(`/api/trips/${tripId}/messages`), {
@@ -57,9 +91,9 @@ function TripChat({tripId, currUserId}){
                     table: 'trip_messages',
                     filter: `trip_id=eq.${tripId}`
                 },
-                (payload) => {
+                async (payload) => {
                     //fetch user data for incoming msg
-                    const { data: userData } = supabase
+                    const { data: userData } = await supabase
                         .from('users')
                         .select('first_name, last_name, profile_picture, role, school')
                         .eq('id', payload.new.user_id)
@@ -78,18 +112,11 @@ function TripChat({tripId, currUserId}){
         return () => {
             supabase.removeChannel(chatChannel) // removes listener when chat is closed
         }
-    }, [tripId, token])
+    }, [tripId, token, currUserId])
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
     }, [messages])
-
-    const participants = messages.reduce((acc, msg) => {
-        if (msg.users && !acc.find(u => u.id === msg.user_id)) {
-            acc.push({ id: msg.user_id, ...msg.users })
-        }
-        return acc
-    }, [])
 
     // format timestamp for individual messages
     const formatTime = (dateString) => {
@@ -149,10 +176,12 @@ function TripChat({tripId, currUserId}){
     <Flex direction="column" h="full" bg="white">
             
             {/* participants*/}
-            <Flex align="center" justify="space-between" pl={4} pr={12} borderBottom="1px solid" borderColor="gray.100" bg="gray.50">
-                <Heading size="sm" color="gray.800" isTruncated maxW="70%">
-                    {tripTitle}
-                </Heading>
+            <Flex align="center" justify="space-between" pl={4} pr={12} py={3} borderBottom="1px solid" borderColor="gray.100" bg="gray.50">
+                <HStack spacing={2} minW={0} flex="1">
+                    <Heading size="sm" color="gray.800" whiteSpace="normal" noOfLines={2} maxW="260px">
+                        {tripTitle}
+                    </Heading>
+                </HStack>
 
                 <AvatarGroup size="sm" max={4} spacing="-0.5rem">
                     {participants.map((user) => (
