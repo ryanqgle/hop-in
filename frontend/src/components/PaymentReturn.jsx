@@ -1,4 +1,5 @@
 import {useEffect, useState} from 'react';
+import {apiUrl} from '../api'
 import {
     Navigate
 } from 'react-router-dom';
@@ -18,7 +19,7 @@ const PaymentReturn = () => {
             return;
         }
 
-        fetch(`/api/session_status?session_id=${sessionId}`)
+        fetch(apiUrl(`/api/session_status?session_id=${sessionId}`))
             .catch(setStatus('Error'))
             .then((res) => res.json())
             .then((data) => {
