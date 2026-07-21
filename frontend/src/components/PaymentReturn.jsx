@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react'
-import { Navigate, Link as RouterLink } from 'react-router-dom'
+import { useEffect, useState } from 'react';
+import { Navigate, Link as RouterLink } from 'react-router-dom';
 import {apiUrl} from '../api'
 import {
   Box,
@@ -13,7 +13,6 @@ import {
   Icon,
 } from '@chakra-ui/react'
 import { CheckCircleIcon, WarningIcon } from '@chakra-ui/icons'
-import { apiUrl } from '../api'
 
 const PaymentReturn = () => {
   const [status, setStatus] = useState(null)
