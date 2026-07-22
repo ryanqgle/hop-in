@@ -10,13 +10,11 @@ import {
     Flex,
     Badge,
     Button,
-    Avatar,
     Divider,
     Center,
     Spinner,
     Drawer,
     DrawerBody,
-    DrawerHeader,
     DrawerOverlay,
     DrawerContent,
     DrawerCloseButton,
@@ -114,7 +112,7 @@ export default function RiderActivity() {
       ) : (
         <SimpleGrid columns={{ base: 1, md: 2, lg: 3 }} spacing={5} w="full" mb={8}>
           {upcomingTrips.map(req => (
-            <Card key={req.id} variant="outline" bg={passengerCardBg} borderRadius="xl" border="1px solid" broderColor={passengerCardBorder}>
+            <Card key={req.id} variant="outline" bg={passengerCardBg} borderRadius="xl" border="1px solid" borderColor={passengerCardBorder}>
               <CardBody>
                 <Flex justify="space-between" align="flex-start" mb={3}>
                   <Box>
